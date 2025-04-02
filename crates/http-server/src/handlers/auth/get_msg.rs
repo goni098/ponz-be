@@ -28,6 +28,7 @@ pub async fn handler(
 ) -> ServerRlt<Json<Message>> {
     let msg = rand::rng()
         .sample_iter(&Alphanumeric)
+        .take(12)
         .map(char::from)
         .collect();
 

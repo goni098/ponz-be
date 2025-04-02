@@ -423,17 +423,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum-derive-error"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f77ede18f1778702eb354abcfd94a7e5802f9e7e9a2499e8ad39bfb539bb631b"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "axum-extra"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1874,7 +1863,6 @@ name = "http-server"
 version = "0.1.0"
 dependencies = [
  "axum",
- "axum-derive-error",
  "axum-extra",
  "axum-macros",
  "database",
