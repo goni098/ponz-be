@@ -1,0 +1,39 @@
+services:
+  axum-tmp-redis:
+    image: redis:7
+    container_name: axum-tmp-redis
+    ports:
+      - "6379:6379"
+    restart: always
+    volumes:
+      - ./volumes/redis:/data
+
+  
+  axum-tmp-database:
+    image: postgres:17.4
+    restart: always
+    container_name: axum-tmp-db
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $POSTGRES_DB
+      POSTGRES_USER: $POSTGRES_USER
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./volumes/db:/var/lib/postgresql/data
+
+  axum-tmp-server: 
+    image: axum-tmp:1.0.0
+    build: .
+    container_name: axum-tmp-server
+    depends_on:
+      - axum-tmp-redis
+      - axum-tmp-database
+    environment:
+      DATABASE_URL: $DATABASE_URL
+      REDIS_URL: $REDIS_URL
+      ACCESS_TOKEN_SECRET: $ACCESS_TOKEN_SECRET
+      RENEW_TOKEN_SECRET: $RENEW_TOKEN_SECRET
+      SOLANA_RPC_URL: $SOLANA_RPC_URL
+    ports:
+      - "8080:8080"

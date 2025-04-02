@@ -26,7 +26,7 @@ where
     type Rejection = ServerErr;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> ServerRlt<Self> {
-        let secret = shared::env::read_env("JWT_SECRET")?;
+        let secret = shared::env::read_env("ACCESS_TOKEN_SECRET")?;
 
         parts
             .extract::<TypedHeader<Authorization<Bearer>>>()

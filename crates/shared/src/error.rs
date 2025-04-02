@@ -45,6 +45,9 @@ pub enum SharedErr {
 
     #[error(transparent)]
     SolanaParseSignature(#[from] ParseSignatureError),
+
+    #[error(transparent)]
+    Redis(#[from] redis::RedisError),
 }
 
 impl SharedErr {

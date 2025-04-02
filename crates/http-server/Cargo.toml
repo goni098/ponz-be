@@ -29,3 +29,7 @@ database = { path = "../database" }
 
 solana-sdk = { workspace = true }
 solana-client = { workspace = true }
+
+redis = { workspace = true }
+
+rand = { workspace = true }

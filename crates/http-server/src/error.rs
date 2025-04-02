@@ -51,6 +51,9 @@ pub enum ServerErr {
 
     #[error(transparent)]
     Shared(#[from] shared::SharedErr),
+
+    #[error(transparent)]
+    Redis(#[from] redis::RedisError),
 }
 
 pub type ServerRlt<A> = Result<A, ServerErr>;
