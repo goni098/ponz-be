@@ -5,5 +5,5 @@ datasource db {
 
 model user {
   id      BigInt @id @default(autoincrement())
-  address String @db.VarChar
+  address String @db.VarChar @unique
 }

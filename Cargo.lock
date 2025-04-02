@@ -808,8 +808,10 @@ checksum = "1a7964611d71df112cb1730f2ee67324fcf4d0fc6606acbbe9bfe06df124637c"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-link",
 ]
 
@@ -1865,8 +1867,11 @@ dependencies = [
  "axum",
  "axum-extra",
  "axum-macros",
+ "chrono",
  "database",
+ "hex",
  "jsonwebtoken",
+ "nacl",
  "rand 0.9.0",
  "redis",
  "serde",
@@ -2479,6 +2484,12 @@ dependencies = [
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.52.0",
 ]
+
+[[package]]
+name = "nacl"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30aefc44d813c51b5e7952950e87c17f2e0e1a3274d63c8281a701e05323d548"
 
 [[package]]
 name = "native-tls"

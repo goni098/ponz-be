@@ -32,3 +32,9 @@ solana-client = { workspace = true }
 redis = { workspace = true }
 
 rand = { workspace = true }
+
+hex = { workspace = true }
+
+nacl = { workspace = true }
+
+chrono = { workspace = true }

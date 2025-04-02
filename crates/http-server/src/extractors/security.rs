@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 pub struct Claims {
     pub exp: u32,
     pub id: i64,
-    pub telegram_id: i64,
+    pub address: String,
 }
 
 pub struct Auth(pub Claims);
