@@ -4,11 +4,11 @@ use solana_client::{
     rpc_request::{RpcError as SolanaRpcError, RpcRequest, RpcResponseErrorData},
     rpc_response::{Response, RpcSimulateTransactionResult},
 };
-use solana_sdk::message::CompileError;
 use solana_sdk::program_error::ProgramError;
 use solana_sdk::pubkey::ParsePubkeyError;
 use solana_sdk::signature::ParseSignatureError;
 use solana_sdk::signer::SignerError;
+use solana_sdk::{message::CompileError, pubkey::Pubkey};
 use std::borrow::Cow;
 
 #[derive(Debug, thiserror::Error)]
@@ -48,6 +48,12 @@ pub enum SharedErr {
 
     #[error(transparent)]
     Redis(#[from] redis::RedisError),
+
+    #[error("Account not found {0}")]
+    SolnaAccountNotFound(Pubkey),
+
+    #[error(transparent)]
+    Base64Decode(#[from] base64::DecodeError),
 }
 
 impl SharedErr {
