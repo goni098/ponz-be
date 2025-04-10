@@ -1,3 +1,3 @@
-pub mod security;
+pub mod auth;
 pub mod state;
-pub mod valiadation;
+pub mod validation;

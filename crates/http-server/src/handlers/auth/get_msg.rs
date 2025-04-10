@@ -7,7 +7,7 @@ use crate::{
     error::ServerRlt,
     extractors::{
         state::Redis,
-        valiadation::{ValidatedParams, is_valid_pubkey},
+        validation::{ValidatedParams, is_valid_pubkey},
     },
 };
 

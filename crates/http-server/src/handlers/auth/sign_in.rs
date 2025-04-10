@@ -10,7 +10,7 @@ use validator::Validate;
 
 use crate::{
     error::{ServerErr, ServerRlt},
-    extractors::{security::Claims, valiadation::ValidatedPayload, valiadation::is_valid_pubkey},
+    extractors::{auth::Claims, validation::ValidatedPayload, validation::is_valid_pubkey},
 };
 
 #[derive(Deserialize, Validate)]

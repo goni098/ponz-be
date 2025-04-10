@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::{
     error::{ServerErr, ServerRlt},
-    extractors::security::Auth,
+    extractors::auth::Auth,
 };
 
 #[derive(Serialize)]
