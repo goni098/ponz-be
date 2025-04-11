@@ -32,7 +32,7 @@ pub enum SharedErr {
     Io(#[from] std::io::Error),
 
     #[error("{0:#?}")]
-    SolanaTxSimmulate(Box<Response<RpcSimulateTransactionResult>>),
+    SolanaTxSimulate(Box<Response<RpcSimulateTransactionResult>>),
 
     #[error(transparent)]
     SolanaProgram(#[from] ProgramError),
@@ -50,7 +50,7 @@ pub enum SharedErr {
     Redis(#[from] redis::RedisError),
 
     #[error("Account not found {0}")]
-    SolnaAccountNotFound(Pubkey),
+    SolanaAccountNotFound(Pubkey),
 
     #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
@@ -59,7 +59,7 @@ pub enum SharedErr {
 impl SharedErr {
     pub fn get_solana_program_logs(&self) -> Option<&Vec<String>> {
         match self {
-            Self::SolanaTxSimmulate(response) => response.value.logs.as_ref(),
+            Self::SolanaTxSimulate(response) => response.value.logs.as_ref(),
             Self::SolanaClient(ClientError {
                 request: Some(RpcRequest::SendTransaction),
                 kind:

@@ -3,7 +3,7 @@ use shared::{Rlt, SharedErr};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
-use crate::DISCRIMTINATOR;
+use crate::DISCRIMINATOR;
 
 pub async fn deserialize_account<T: BorshDeserialize>(
     client: &RpcClient,
@@ -11,11 +11,11 @@ pub async fn deserialize_account<T: BorshDeserialize>(
 ) -> Rlt<T> {
     let data = client.get_account_data(pubkey).await?;
 
-    let data: &mut &[u8] = &mut &data.as_slice()[DISCRIMTINATOR..];
+    let data: &mut &[u8] = &mut &data.as_slice()[DISCRIMINATOR..];
 
     T::deserialize(data).map_err(|error| {
         if error.to_string().starts_with("AccountNotFound") {
-            SharedErr::SolnaAccountNotFound(*pubkey)
+            SharedErr::SolanaAccountNotFound(*pubkey)
         } else {
             error.into()
         }

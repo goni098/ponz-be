@@ -1,4 +1,4 @@
 pub mod core;
 pub mod programs;
 
-const DISCRIMTINATOR: usize = 8;
+const DISCRIMINATOR: usize = 8;
