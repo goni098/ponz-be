@@ -9,6 +9,7 @@ use axum_extra::{
 };
 use jsonwebtoken::{DecodingKey, Validation, errors::ErrorKind};
 use serde::{Deserialize, Serialize};
+use shared::env::ENV;
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Claims {
@@ -26,18 +27,16 @@ where
     type Rejection = ServerErr;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> ServerRlt<Self> {
-        let secret = shared::env::read_env("ACCESS_TOKEN_SECRET")?;
-
         parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await
             .map_err(|_| Unauthorized("Missing Authorization".into()))
-            .and_then(|bearer| decode_token(bearer.token(), secret))
+            .and_then(|bearer| decode_token(bearer.token(), &ENV.access_token_secret))
             .map(Self)
     }
 }
 
-pub fn decode_token(token: &str, secret: String) -> ServerRlt<Claims> {
+pub fn decode_token(token: &str, secret: &str) -> ServerRlt<Claims> {
     jsonwebtoken::decode::<Claims>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),

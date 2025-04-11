@@ -5,7 +5,7 @@ use axum::{
     http::request::Parts,
 };
 use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use shared::Rlt;
+use shared::{Rlt, env::ENV};
 use solana_client::nonblocking::rpc_client::RpcClient;
 
 use crate::error::{ServerErr, ServerRlt};
@@ -38,14 +38,14 @@ where
 }
 
 impl AppState {
-    pub async fn new(db_url: String, redis_url: String, solana_rpc_url: String) -> Rlt<AppState> {
-        let mut opt = ConnectOptions::new(db_url);
+    pub async fn new() -> Rlt<AppState> {
+        let mut opt = ConnectOptions::new(&ENV.db_url);
 
         opt.sqlx_logging(false);
 
         let db_conn = Database::connect(opt).await?;
-        let solana_client = Arc::new(RpcClient::new(solana_rpc_url));
-        let redis_client = redis::Client::open(redis_url)?;
+        let solana_client = Arc::new(RpcClient::new(ENV.solana_rpc_url.clone()));
+        let redis_client = redis::Client::open(ENV.redis_url.as_str())?;
 
         Ok(Self {
             db_conn,

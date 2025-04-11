@@ -12,11 +12,7 @@ mod routers;
 async fn main() -> Rlt<()> {
     shared::logging::set_up("http_server=debug");
 
-    let db_url = shared::env::read_env("DATABASE_URL")?;
-    let redis_url = shared::env::read_env("REDIS_URL")?;
-    let solana_rpc_url = shared::env::read_env("SOLANA_RPC_URL")?;
-
-    let state = AppState::new(db_url, redis_url, solana_rpc_url).await?;
+    let state = AppState::new().await?;
 
     let app = Router::new()
         .route("/", get(|| async { "🦀 hello !" }))

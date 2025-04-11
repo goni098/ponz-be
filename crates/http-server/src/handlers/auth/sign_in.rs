@@ -5,6 +5,7 @@ use chrono::{Duration, Utc};
 use database::{repositories::user, sea_orm::DatabaseConnection};
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
+use shared::env::ENV;
 use solana_sdk::pubkey::Pubkey;
 use validator::Validate;
 
@@ -58,11 +59,9 @@ pub async fn handler(
 }
 
 fn sign(user_id: i64, address: String) -> ServerRlt<Token> {
-    let secret = shared::env::read_env("ACCESS_TOKEN_SECRET")?;
-
     let header = Header::new(Algorithm::HS256);
 
-    let secret_key = EncodingKey::from_secret(secret.as_bytes());
+    let secret_key = EncodingKey::from_secret(ENV.access_token_secret.as_bytes());
 
     let access_exp = Utc::now()
         .checked_add_signed(Duration::days(3))
