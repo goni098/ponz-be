@@ -1,5 +1,6 @@
 use axum::Json;
 use rand::{Rng, distr::Alphanumeric};
+use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
 
@@ -32,10 +33,8 @@ pub async fn handler(
         .map(char::from)
         .collect();
 
-    redis::cmd("SET")
-        .arg(params.address)
-        .arg(&msg)
-        .exec_async(&mut redis)
+    redis
+        .set::<String, &String, ()>(params.address, &msg)
         .await?;
 
     Ok(Json(Message { msg }))

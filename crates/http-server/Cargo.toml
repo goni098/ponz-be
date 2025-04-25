@@ -35,6 +35,4 @@ rand = { workspace = true }
 
 hex = { workspace = true }
 
-nacl = { workspace = true }
-
 chrono = { workspace = true }

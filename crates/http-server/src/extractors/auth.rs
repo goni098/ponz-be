@@ -8,7 +8,7 @@ use axum_extra::{
     headers::{Authorization, authorization::Bearer},
 };
 use jsonwebtoken::{DecodingKey, Validation, errors::ErrorKind};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use shared::env::ENV;
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -16,6 +16,12 @@ pub struct Claims {
     pub exp: u32,
     pub id: i64,
     pub address: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Sub {
+    pub exp: u32,
+    pub sub: i64,
 }
 
 pub struct Auth(pub Claims);
@@ -36,8 +42,8 @@ where
     }
 }
 
-pub fn decode_token(token: &str, secret: &str) -> ServerRlt<Claims> {
-    jsonwebtoken::decode::<Claims>(
+pub fn decode_token<T: DeserializeOwned>(token: &str, secret: &str) -> ServerRlt<T> {
+    jsonwebtoken::decode::<T>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),
         &Validation::default(),

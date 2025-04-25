@@ -64,6 +64,4 @@ redis = { version = "0.29.5", features = ["tokio-comp"] }
 # random
 rand = { version = "0.9.0" }
 
-nacl = { version = "0.5.3" }
-
 borsh = { version = "1.5.7" }

@@ -16,12 +16,13 @@ pub async fn create_if_not_exist(db: &DatabaseConnection, address: String) -> Re
         return Ok(user.id);
     }
 
-    let insert_result = user::Entity::insert(user::ActiveModel {
+    let user_id = user::Entity::insert(user::ActiveModel {
         address: Set(address),
         id: Default::default(),
     })
     .exec(db)
-    .await?;
+    .await?
+    .last_insert_id;
 
-    Ok(insert_result.last_insert_id)
+    Ok(user_id)
 }
