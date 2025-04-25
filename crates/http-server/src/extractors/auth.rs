@@ -1,6 +1,6 @@
 use crate::error::{
-    ServerErr::{self, *},
-    ServerRlt,
+    HttpException::{self, *},
+    HttpResult,
 };
 use axum::{RequestPartsExt, extract::FromRequestParts, http::request::Parts};
 use axum_extra::{
@@ -30,9 +30,9 @@ impl<S> FromRequestParts<S> for Auth
 where
     S: Send + Sync,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> ServerRlt<Self> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> HttpResult<Self> {
         parts
             .extract::<TypedHeader<Authorization<Bearer>>>()
             .await
@@ -42,7 +42,7 @@ where
     }
 }
 
-pub fn decode_token<T: DeserializeOwned>(token: &str, secret: &str) -> ServerRlt<T> {
+pub fn decode_token<T: DeserializeOwned>(token: &str, secret: &str) -> HttpResult<T> {
     jsonwebtoken::decode::<T>(
         token,
         &DecodingKey::from_secret(secret.as_bytes()),

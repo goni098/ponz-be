@@ -1,6 +1,6 @@
 use axum::{Router, routing::get};
 use extractors::state::AppState;
-use shared::Rlt;
+use shared::AppResult;
 use tower_http::cors::CorsLayer;
 
 mod error;
@@ -9,7 +9,7 @@ mod handlers;
 mod routers;
 
 #[tokio::main]
-async fn main() -> Rlt<()> {
+async fn main() -> AppResult<()> {
     shared::logging::set_up("http_server=debug");
 
     let state = AppState::new().await?;

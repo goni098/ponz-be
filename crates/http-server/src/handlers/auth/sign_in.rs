@@ -14,7 +14,7 @@ use solana_sdk::{pubkey::Pubkey, signature::Signature};
 use validator::Validate;
 
 use crate::{
-    error::{ServerErr, ServerRlt},
+    error::{HttpException, HttpResult},
     extractors::{
         auth::{Claims, Sub},
         state::Redis,
@@ -40,7 +40,7 @@ pub async fn handler(
     State(db): State<DatabaseConnection>,
     Redis(mut redis): Redis,
     ValidatedPayload(payload): ValidatedPayload<Payload>,
-) -> ServerRlt<Json<Tokens>> {
+) -> HttpResult<Json<Tokens>> {
     let Payload {
         address,
         message,
@@ -50,24 +50,24 @@ pub async fn handler(
     let stored_message = redis
         .get::<&String, Option<String>>(&address)
         .await?
-        .ok_or(ServerErr::Unauthorized(
+        .ok_or(HttpException::Unauthorized(
             "Message has not been created".into(),
         ))?;
 
     if stored_message != message {
-        return Err(ServerErr::Unauthorized("Invalid messgage".into()));
+        return Err(HttpException::Unauthorized("Invalid messgage".into()));
     }
 
     let sig = Signature::from_str(&signature)
-        .map_err(|_| ServerErr::Unauthorized("Invalid signature".into()))?;
+        .map_err(|_| HttpException::Unauthorized("Invalid signature".into()))?;
 
     let pubkey =
-        Pubkey::from_str(&address).map_err(|e| ServerErr::BadRequest(e.to_string().into()))?;
+        Pubkey::from_str(&address).map_err(|e| HttpException::BadRequest(e.to_string().into()))?;
 
     let valid_signature = sig.verify(pubkey.as_ref(), message.as_bytes());
 
     if !valid_signature {
-        return Err(ServerErr::Unauthorized("Wrong signature".into()));
+        return Err(HttpException::Unauthorized("Wrong signature".into()));
     }
 
     let user_id = user::create_if_not_exist(&db, pubkey.to_string()).await?;
@@ -80,7 +80,7 @@ pub async fn handler(
 }
 
 impl Tokens {
-    pub fn sign_from(user_id: i64, address: String) -> ServerRlt<Self> {
+    pub fn sign_from(user_id: i64, address: String) -> HttpResult<Self> {
         let header = Header::new(Algorithm::HS256);
 
         let access_secret_key = EncodingKey::from_secret(ENV.access_token_secret.as_bytes());
@@ -103,10 +103,10 @@ impl Tokens {
         };
 
         let access_token = jsonwebtoken::encode(&header, &claims, &access_secret_key)
-            .map_err(|e| ServerErr::Unauthorized(e.to_string().into()))?;
+            .map_err(|e| HttpException::Unauthorized(e.to_string().into()))?;
 
         let renew_token = jsonwebtoken::encode(&header, &sub, &renew_secret_key)
-            .map_err(|e| ServerErr::Unauthorized(e.to_string().into()))?;
+            .map_err(|e| HttpException::Unauthorized(e.to_string().into()))?;
 
         Ok(Self {
             access_token,

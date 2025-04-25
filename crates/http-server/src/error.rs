@@ -5,7 +5,7 @@ use std::borrow::Cow;
 
 #[allow(dead_code)]
 #[derive(thiserror::Error, Debug)]
-pub enum ServerErr {
+pub enum HttpException {
     #[error(transparent)]
     Validation(#[from] validator::ValidationErrors),
 
@@ -30,9 +30,6 @@ pub enum ServerErr {
     #[error("{0:#?}")]
     Internal(Cow<'static, str>),
 
-    #[error("{0}")]
-    EnvError(Cow<'static, str>),
-
     #[error("{0:#?}")]
     Custom(Cow<'static, str>),
 
@@ -43,15 +40,15 @@ pub enum ServerErr {
     Database(#[from] database::sea_orm::error::DbErr),
 
     #[error(transparent)]
-    Shared(#[from] shared::SharedErr),
+    App(#[from] shared::AppError),
 
     #[error(transparent)]
     Redis(#[from] redis::RedisError),
 }
 
-pub type ServerRlt<A> = Result<A, ServerErr>;
+pub type HttpResult<A> = Result<A, HttpException>;
 
-impl IntoResponse for ServerErr {
+impl IntoResponse for HttpException {
     fn into_response(self) -> axum::response::Response {
         let status_code = match self {
             Self::BadRequest(_) => StatusCode::BAD_REQUEST,

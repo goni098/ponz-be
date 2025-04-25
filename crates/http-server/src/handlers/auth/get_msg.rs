@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use validator::Validate;
 
 use crate::{
-    error::ServerRlt,
+    error::HttpResult,
     extractors::{
         state::Redis,
         validation::{ValidatedParams, is_valid_pubkey},
@@ -26,7 +26,7 @@ pub struct Message {
 pub async fn handler(
     Redis(mut redis): Redis,
     ValidatedParams(params): ValidatedParams<Params>,
-) -> ServerRlt<Json<Message>> {
+) -> HttpResult<Json<Message>> {
     let msg = rand::rng()
         .sample_iter(&Alphanumeric)
         .take(12)

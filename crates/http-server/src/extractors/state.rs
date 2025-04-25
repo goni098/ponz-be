@@ -5,10 +5,10 @@ use axum::{
     http::request::Parts,
 };
 use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
-use shared::{Rlt, env::ENV};
+use shared::{AppResult, env::ENV};
 use solana_client::nonblocking::rpc_client::RpcClient;
 
-use crate::error::{ServerErr, ServerRlt};
+use crate::error::{HttpException, HttpResult};
 
 pub type SolanaClient = Arc<RpcClient>;
 
@@ -26,9 +26,9 @@ where
     S: Send + Sync,
     redis::Client: FromRef<S>,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
-    async fn from_request_parts(_parts: &mut Parts, state: &S) -> ServerRlt<Self> {
+    async fn from_request_parts(_parts: &mut Parts, state: &S) -> HttpResult<Self> {
         let connection = redis::Client::from_ref(state)
             .get_multiplexed_async_connection()
             .await?;
@@ -38,7 +38,7 @@ where
 }
 
 impl AppState {
-    pub async fn new() -> Rlt<AppState> {
+    pub async fn new() -> AppResult<AppState> {
         let mut opt = ConnectOptions::new(&ENV.db_url);
 
         opt.sqlx_logging(false);

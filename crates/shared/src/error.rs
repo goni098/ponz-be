@@ -12,7 +12,7 @@ use solana_sdk::{message::CompileError, pubkey::Pubkey};
 use std::borrow::Cow;
 
 #[derive(Debug, thiserror::Error)]
-pub enum SharedErr {
+pub enum AppError {
     #[error("{0}")]
     Custom(Cow<'static, str>),
 
@@ -56,7 +56,7 @@ pub enum SharedErr {
     Base64Decode(#[from] base64::DecodeError),
 }
 
-impl SharedErr {
+impl AppError {
     pub fn get_solana_program_logs(&self) -> Option<&Vec<String>> {
         match self {
             Self::SolanaTxSimulate(response) => response.value.logs.as_ref(),

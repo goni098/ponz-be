@@ -1,6 +1,6 @@
 use std::{env::VarError, sync::LazyLock};
 
-use crate::{Rlt, SharedErr};
+use crate::{AppError, AppResult};
 
 pub struct Env {
     pub db_url: String,
@@ -26,13 +26,13 @@ pub static ENV: LazyLock<Env> = LazyLock::new(|| {
     }
 });
 
-fn read_env(env: &str) -> Rlt<String> {
+fn read_env(env: &str) -> AppResult<String> {
     std::env::var(env).map_err(|error| match error {
         VarError::NotUnicode(message) => {
-            SharedErr::EnvError(message.to_str().unwrap_or_default().to_string().into())
+            AppError::EnvError(message.to_str().unwrap_or_default().to_string().into())
         }
         VarError::NotPresent => {
-            SharedErr::EnvError(format!("Missing {} env configuration", env).into())
+            AppError::EnvError(format!("Missing {} env configuration", env).into())
         }
     })
 }

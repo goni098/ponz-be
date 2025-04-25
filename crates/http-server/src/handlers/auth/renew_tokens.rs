@@ -4,7 +4,7 @@ use serde::Deserialize;
 use shared::env::ENV;
 
 use crate::{
-    error::{ServerErr, ServerRlt},
+    error::{HttpException, HttpResult},
     extractors::auth::{Sub, decode_token},
 };
 
@@ -18,22 +18,22 @@ pub struct Payload {
 pub async fn handler(
     State(db): State<DatabaseConnection>,
     Json(payload): Json<Payload>,
-) -> ServerRlt<Json<Tokens>> {
+) -> HttpResult<Json<Tokens>> {
     let Payload { renew_token } = payload;
 
     let claims = decode_token::<Sub>(&renew_token, &ENV.renew_token_secret)?;
 
     let token = repositories::renew_token::find_by_user_id(&db, claims.sub)
         .await?
-        .ok_or(ServerErr::Unauthorized("Token not found".into()))?;
+        .ok_or(HttpException::Unauthorized("Token not found".into()))?;
 
     if token != renew_token {
-        return Err(ServerErr::Unauthorized("Wrong token".into()));
+        return Err(HttpException::Unauthorized("Wrong token".into()));
     }
 
     let user = repositories::user::find_by_id(&db, claims.sub)
         .await?
-        .ok_or(ServerErr::Internal("User not found".into()))?;
+        .ok_or(HttpException::Internal("User not found".into()))?;
 
     let tokens = Tokens::sign_from(user.id, user.address)?;
 

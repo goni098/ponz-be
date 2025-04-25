@@ -3,7 +3,7 @@ use database::{repositories, sea_orm::DatabaseConnection};
 use serde::Serialize;
 
 use crate::{
-    error::{ServerErr, ServerRlt},
+    error::{HttpException, HttpResult},
     extractors::auth::Auth,
 };
 
@@ -16,10 +16,10 @@ pub struct Me {
 pub async fn handler(
     Auth(claims): Auth,
     State(db): State<DatabaseConnection>,
-) -> ServerRlt<Json<Me>> {
+) -> HttpResult<Json<Me>> {
     let user = repositories::user::find_by_id(&db, claims.id)
         .await?
-        .ok_or(ServerErr::Internal(
+        .ok_or(HttpException::Internal(
             format!("not found user with id {}", claims.id).into(),
         ))?;
 

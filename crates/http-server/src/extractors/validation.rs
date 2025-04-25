@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::error::ServerErr;
+use crate::error::HttpException;
 use axum::{
     Form, Json,
     extract::{
@@ -24,7 +24,7 @@ where
     P: DeserializeOwned + Validate,
     Path<P>: FromRequestParts<S, Rejection = PathRejection>,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let Path(path) = Path::<P>::from_request_parts(parts, state).await?;
@@ -39,7 +39,7 @@ where
     Q: DeserializeOwned + Validate,
     Query<Q>: FromRequestParts<S, Rejection = QueryRejection>,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let Query(query) = Query::<Q>::from_request_parts(parts, state).await?;
@@ -54,7 +54,7 @@ where
     P: DeserializeOwned + Validate,
     Json<P>: FromRequest<S, Rejection = JsonRejection>,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Json(payload) = Json::<P>::from_request(req, state).await?;
@@ -69,7 +69,7 @@ where
     S: Send + Sync,
     Form<T>: FromRequest<S, Rejection = FormRejection>,
 {
-    type Rejection = ServerErr;
+    type Rejection = HttpException;
 
     async fn from_request(req: Request, state: &S) -> Result<Self, Self::Rejection> {
         let Form(form) = Form::<T>::from_request(req, state).await?;
