@@ -36,3 +36,5 @@ rand = { workspace = true }
 hex = { workspace = true }
 
 chrono = { workspace = true }
+
+alloy = { workspace = true }

@@ -9,8 +9,9 @@ tokio = { workspace = true }
 solana-client = { workspace = true }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
-
+alloy = { workspace = true }
 tracing = { workspace = true }
 
 database = { path = "../database" }
 shared = { path = "../shared" }
+web3 = { path = "../web3" }

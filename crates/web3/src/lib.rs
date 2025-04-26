@@ -1,4 +1,2 @@
-pub mod core;
-pub mod programs;
-
-const DISCRIMINATOR: usize = 8;
+pub mod client;
+pub mod contracts;
