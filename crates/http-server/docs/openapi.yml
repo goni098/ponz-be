@@ -10,8 +10,9 @@ info:
 
 servers:
     - url: http://localhost:8080
+      description: local
     - url: https://api.server.test/v1
-      description: Server description
+      description: dev
 
 components:
     securitySchemes:
@@ -37,7 +38,7 @@ paths:
         get:
             description: Get auth message for signing
             tags:
-                - Auth
+                - auth
             parameters:
                 - in: query
                   name: address
@@ -56,4 +57,26 @@ paths:
                                 properties:
                                     msg:
                                         type: string
+                    description: OK
+    /users/me:
+        get:
+            description: Get user info
+            security:
+                - BearerAuth: ["???"]
+            tags:
+                - users
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: number
+                                    address:
+                                        type: string
+                                required:
+                                    - id
+                                    - address
                     description: OK

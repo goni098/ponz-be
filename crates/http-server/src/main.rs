@@ -18,11 +18,11 @@ async fn main() -> AppResult<()> {
         .route("/", get(|| async { "🦀 hello !" }))
         .route(
             "/swagger/openapi.yml",
-            get(|| async { include_str!("../openapi.yml") }),
+            get(|| async { include_str!("../docs/openapi.yml") }),
         )
         .route(
             "/swagger",
-            get(|| async { Html(include_str!("../openapi.html")) }),
+            get(|| async { Html(include_str!("../docs/openapi.html")) }),
         )
         .merge(routers::auth::routes())
         .merge(routers::users::routes())
