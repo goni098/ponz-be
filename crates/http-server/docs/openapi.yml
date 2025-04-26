@@ -1,0 +1,82 @@
+openapi: "3.0.3"
+info:
+    title: API Title
+    version: "1.0"
+    description: Axum tmp
+    contact:
+        email: mtheanh2910@gmail.com
+        name: goni098
+        url: https://github.com/goni098
+
+servers:
+    - url: http://localhost:8080
+      description: local
+    - url: https://api.server.test/v1
+      description: dev
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: auth token
+    schemas:
+        Tokens:
+            type: object
+            properties:
+                access_token:
+                    type: string
+                renew_token:
+                    type: string
+            required:
+                - access_token
+                - renew_token
+
+paths:
+    /auth/message:
+        get:
+            description: Get auth message for signing
+            tags:
+                - auth
+            parameters:
+                - in: query
+                  name: address
+                  description: Wallet address
+                  required: true
+                  schema:
+                      type: string
+                      example: GP2r8coxtqfWFFznuNVg7SkXkPQWFyXYVPgK3yEgknH3
+
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    msg:
+                                        type: string
+                    description: OK
+    /users/me:
+        get:
+            description: Get user info
+            security:
+                - BearerAuth: ["???"]
+            tags:
+                - users
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: number
+                                    address:
+                                        type: string
+                                required:
+                                    - id
+                                    - address
+                    description: OK

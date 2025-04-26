@@ -1,4 +1,4 @@
-use axum::{Router, routing::get};
+use axum::{Router, response::Html, routing::get};
 use extractors::state::AppState;
 use shared::AppResult;
 use tower_http::cors::CorsLayer;
@@ -16,6 +16,14 @@ async fn main() -> AppResult<()> {
 
     let app = Router::new()
         .route("/", get(|| async { "🦀 hello !" }))
+        .route(
+            "/swagger/openapi.yml",
+            get(|| async { include_str!("../docs/openapi.yml") }),
+        )
+        .route(
+            "/swagger",
+            get(|| async { Html(include_str!("../docs/openapi.html")) }),
+        )
         .merge(routers::auth::routes())
         .merge(routers::users::routes())
         .layer(CorsLayer::permissive())
