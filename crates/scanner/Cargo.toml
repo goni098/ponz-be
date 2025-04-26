@@ -11,6 +11,7 @@ solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 alloy = { workspace = true }
 tracing = { workspace = true }
+redis = { workspace = true }
 
 database = { path = "../database" }
 shared = { path = "../shared" }

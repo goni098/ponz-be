@@ -4,12 +4,50 @@ datasource db {
 }
 
 model user {
-  id      BigInt @id @default(autoincrement())
-  address String @unique @db.VarChar
+  id         BigInt   @id @default(autoincrement())
+  created_at DateTime @default(now()) @db.Timestamptz(3)
+  address    String   @unique @db.VarChar
 }
 
 model renew_token {
   id      BigInt @id @default(autoincrement())
   user_id BigInt @unique
   token   String @db.VarChar
+}
+
+model transaction {
+  id           BigInt             @id @default(autoincrement())
+  created_at   DateTime           @db.Timestamptz(3)
+  chain_id     BigInt
+  actor        String             @db.VarChar
+  method       transaction_method
+  amount       Decimal            @db.Decimal(90, 0)
+  tx_hash      String             @unique @db.VarChar
+  from_address String             @db.VarChar
+  to_address   String             @db.VarChar
+}
+
+model contract_event {
+  id               BigInt              @id @default(autoincrement())
+  created_at       DateTime            @db.Timestamptz(3)
+  chain_id         BigInt
+  contract_address String              @db.VarChar
+  tx_hash          String              @unique @db.VarChar
+  name             contract_event_name
+  args             Json
+
+  @@index([contract_address])
+}
+
+enum contract_event_name {
+  deposit
+  withdraw
+  distribute
+  claim
+}
+
+enum transaction_method {
+  deposit
+  withdraw
+  claim
 }

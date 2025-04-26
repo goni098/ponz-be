@@ -7,7 +7,6 @@ services:
     restart: always
     volumes:
       - ./volumes/redis:/data
-
   
   axum-tmp-database:
     image: postgres:17.4

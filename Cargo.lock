@@ -2311,6 +2311,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "events-subscriber"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "redis",
+ "shared",
+ "tokio",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5111,6 +5121,7 @@ version = "0.1.0"
 dependencies = [
  "alloy",
  "database",
+ "redis",
  "shared",
  "solana-client",
  "solana-sdk",
