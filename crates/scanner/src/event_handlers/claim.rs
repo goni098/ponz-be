@@ -39,15 +39,14 @@ pub async fn handle_claim_event(
     )
     .await?;
 
-    repositories::deposit_txn::create(
+    repositories::claim_txn::create(
         &db_tx,
         chain,
         event.receiver,
-        event.tokenAddress,
-        event.depositAmount,
-        event.actualDepositAmount,
-        deposited_at.into(),
-        deposited_at.into(),
+        event.withdrawer,
+        event.token,
+        claimed_at.into(),
+        claimed_at.into(),
     )
     .await?;
 

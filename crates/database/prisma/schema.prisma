@@ -92,10 +92,5 @@ enum contract_event_name {
   withdraw
   distribute
   claim
-}
-
-enum transaction_method {
-  deposit
-  withdraw
-  claim
+  rebalance
 }

@@ -26,7 +26,10 @@ use web3::{
 
 mod event_handlers;
 
+const MAX_RANGE: u64 = 10_000;
+
 pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
+    shared::logging::set_up("scanner");
     let mut opt = ConnectOptions::new(&ENV.db_url);
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
@@ -59,6 +62,8 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         ..Default::default()
     };
 
+    tracing::info!("🦀 starting scanner on {}...", chain);
+
     loop {
         match scan(
             chain,
@@ -72,13 +77,18 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         .await
         {
             Ok(next) => {
+                tracing::info!(
+                    "scanned from {} to {} successfully",
+                    filter.get_from_block().unwrap_or_default(),
+                    filter.get_to_block().unwrap_or_default(),
+                );
                 filter = filter.from_block(next);
             }
             Err(error) => {
                 tracing::error!(
-                    "scan from {:?} to {:?} failed {:#?}",
-                    filter.get_from_block(),
-                    filter.get_to_block(),
+                    "scan from {} to {} failed {:#?}",
+                    filter.get_from_block().unwrap_or_default(),
+                    filter.get_to_block().unwrap_or_default(),
                     error
                 );
             }
@@ -99,7 +109,7 @@ async fn scan(
 ) -> AppResult<BlockNumberOrTag> {
     let latest_block = client.get_block_number().await?;
     let from_block = filter.get_from_block().unwrap_or(latest_block);
-    let to_block = latest_block.min(from_block + 5000);
+    let to_block = latest_block.min(from_block + MAX_RANGE);
 
     filter.block_option = FilterBlockOption::Range {
         from_block: Some(BlockNumberOrTag::Number(from_block)),
@@ -157,7 +167,15 @@ async fn scan(
                         Event::Rebalance(event),
                     ));
                 }
-                RouterEvents::WithDrawFundSameChain(event) => {
+                _ => {}
+            }
+        } else if contract_address == fund_vault_address {
+            let _decoded_log = FundVaultEvents::decode_log(&log.inner)?;
+        } else if strategy_address.contains(&contract_address) {
+            let decoded_log = StrategyEvents::decode_log(&log.inner)?;
+
+            match decoded_log.data {
+                StrategyEvents::Withdraw(event) => {
                     tasks.push(handler(
                         db,
                         contract_address,
@@ -166,12 +184,17 @@ async fn scan(
                         Event::Withdraw(event),
                     ));
                 }
+                StrategyEvents::ClaimRewardStrategy(event) => {
+                    tasks.push(handler(
+                        db,
+                        contract_address,
+                        tx_hash,
+                        chain,
+                        Event::Claim(event),
+                    ));
+                }
                 _ => {}
             }
-        } else if contract_address == fund_vault_address {
-            let _decoded_log = FundVaultEvents::decode_log(&log.inner)?;
-        } else if strategy_address.contains(&contract_address) {
-            let _decoded_log = StrategyEvents::decode_log(&log.inner)?;
         }
     }
 

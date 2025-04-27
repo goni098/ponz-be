@@ -14,6 +14,8 @@ pub enum ContractEventName {
     Deposit,
     #[sea_orm(string_value = "distribute")]
     Distribute,
+    #[sea_orm(string_value = "rebalance")]
+    Rebalance,
     #[sea_orm(string_value = "withdraw")]
     Withdraw,
 }

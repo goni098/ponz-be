@@ -6,6 +6,7 @@ use sea_orm::{
 
 use crate::{entities::rebalance_txn, utils::to_decimal};
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create(
     db_tx: &DatabaseTransaction,
     chain: NamedChain,
