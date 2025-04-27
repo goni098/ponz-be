@@ -1,3 +1,4 @@
+use alloy::transports::{RpcError, TransportErrorKind};
 use sea_orm::error::DbErr;
 use solana_client::{
     client_error::{ClientError, ClientErrorKind},
@@ -9,7 +10,7 @@ use solana_sdk::pubkey::ParsePubkeyError;
 use solana_sdk::signature::ParseSignatureError;
 use solana_sdk::signer::SignerError;
 use solana_sdk::{message::CompileError, pubkey::Pubkey};
-use std::borrow::Cow;
+use std::{borrow::Cow, num::ParseIntError};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -54,6 +55,15 @@ pub enum AppError {
 
     #[error(transparent)]
     Base64Decode(#[from] base64::DecodeError),
+
+    #[error(transparent)]
+    Rpc(#[from] RpcError<TransportErrorKind>),
+
+    #[error(transparent)]
+    SolTypes(#[from] alloy::sol_types::Error),
+
+    #[error(transparent)]
+    ParseInt(#[from] ParseIntError),
 }
 
 impl AppError {

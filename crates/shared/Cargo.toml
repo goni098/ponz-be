@@ -17,3 +17,5 @@ tracing = { workspace = true }
 redis = { workspace = true }
 
 base64 = { workspace = true }
+
+alloy = { workspace = true }

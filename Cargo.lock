@@ -1967,6 +1967,8 @@ checksum = "575f75dfd25738df5b91b8e43e14d44bda14637a58fae779fd2b064f8bf3e010"
 name = "database"
 version = "0.1.0"
 dependencies = [
+ "alloy",
+ "alloy-chains",
  "sea-orm",
  "serde",
  "serde_json",
@@ -4896,9 +4898,9 @@ checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
 
 [[package]]
 name = "rust_decimal"
-version = "1.36.0"
+version = "1.37.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b082d80e3e3cc52b2ed634388d436fe1f4de6af5786cc2de9ba9737527bdf555"
+checksum = "faa7de2ba56ac291bd90c6b9bece784a52ae1411f9506544b3eae36dd2356d50"
 dependencies = [
  "arrayvec",
  "borsh 1.5.7",
@@ -5120,8 +5122,12 @@ name = "scanner"
 version = "0.1.0"
 dependencies = [
  "alloy",
+ "alloy-chains",
+ "chrono",
  "database",
+ "futures-util",
  "redis",
+ "serde_json",
  "shared",
  "solana-client",
  "solana-sdk",
@@ -5499,6 +5505,7 @@ dependencies = [
 name = "shared"
 version = "0.1.0"
 dependencies = [
+ "alloy",
  "base64 0.22.1",
  "redis",
  "sea-orm",

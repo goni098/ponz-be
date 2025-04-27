@@ -38,9 +38,9 @@ pub fn wallet_client(rpc_url: Url, wallet: EthereumWallet) -> WalletClient {
 }
 
 pub struct Clients {
-    pub sepolia: PublicClient,
-    pub main: PublicClient,
-    pub base: PublicClient,
+    sepolia: PublicClient,
+    main: PublicClient,
+    base: PublicClient,
 }
 
 pub static CLIENTS: LazyLock<Clients> = LazyLock::new(|| Clients {
@@ -61,5 +61,13 @@ impl Clients {
             NamedChain::Mainnet => &self.main,
             _ => &self.sepolia,
         }
+    }
+
+    pub fn all(&self) -> [(&PublicClient, NamedChain); 3] {
+        [
+            (&self.base, NamedChain::Base),
+            (&self.main, NamedChain::Mainnet),
+            (&self.sepolia, NamedChain::ScrollSepolia),
+        ]
     }
 }

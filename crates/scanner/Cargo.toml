@@ -3,15 +3,28 @@ name = "scanner"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "sepolia-scanner"
+path = "./src/bin/sepolia/main.rs"
+
+[[bin]]
+name = "base-scanner"
+path = "./src/bin/base/main.rs"
+
+
 [dependencies]
 tokio = { workspace = true }
+futures-util = { workspace = true }
 
 solana-client = { workspace = true }
 solana-sdk = { workspace = true }
 solana-transaction-status = { workspace = true }
 alloy = { workspace = true }
+alloy-chains = { workspace = true }
 tracing = { workspace = true }
 redis = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
 
 database = { path = "../database" }
 shared = { path = "../shared" }

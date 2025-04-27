@@ -1,4 +1,5 @@
-use alloy::sol;
+use alloy::{primitives::Address, sol};
+use alloy_chains::NamedChain;
 
 use crate::client::PublicClient;
 
@@ -11,3 +12,10 @@ sol!(
 );
 
 pub type RouterContract = Router::RouterInstance<PublicClient>;
+
+pub fn address(chain: NamedChain) -> Address {
+    match chain {
+        NamedChain::Base => Address::ZERO,
+        _ => Address::ZERO,
+    }
+}
