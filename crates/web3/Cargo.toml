@@ -4,13 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-borsh = { workspace = true }
-solana-client = { workspace = true }
-solana-sdk = { workspace = true }
-base64 = { workspace = true }
 alloy = { workspace = true }
 alloy-chains = { workspace = true }
+
 strum = { workspace = true }
+
 url = { workspace = true }
 
 shared = { path = "../shared" }

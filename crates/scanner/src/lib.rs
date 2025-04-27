@@ -19,12 +19,8 @@ use tokio::time::sleep;
 use web3::{
     client::{PublicClient, public_client},
     contracts::{
-        fund_vault::{self, FundVault},
-        router::{
-            self,
-            Router::{self, RouterEvents},
-        },
-        strategy::{self, Strategy},
+        fund_vault::FundVault::FundVaultEvents, router::Router::RouterEvents,
+        strategy::Strategy::StrategyEvents,
     },
 };
 
@@ -37,9 +33,9 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
 
     let client = public_client(chain);
 
-    let router_address = router::address(chain);
-    let fund_vault_address = fund_vault::address(chain);
-    let strategy_address = strategy::address(chain);
+    let router_address = web3::get_router_contract_address(chain);
+    let fund_vault_address = web3::get_fund_vault_contract_address(chain);
+    let strategy_addresses = web3::get_all_supported_stratgies(chain);
 
     let current_scanned_block = {
         let scanned_block = repositories::setting::find(&db, Setting::ScannedBlock(chain)).await?;
@@ -51,8 +47,11 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         }
     };
 
+    let mut addresses_lookup = vec![router_address, fund_vault_address];
+    addresses_lookup.extend(strategy_addresses);
+
     let mut filter = Filter {
-        address: FilterSet::from(vec![router_address, fund_vault_address, strategy_address]),
+        address: FilterSet::from(addresses_lookup),
         block_option: FilterBlockOption::Range {
             from_block: Some(BlockNumberOrTag::Number(current_scanned_block)),
             to_block: None,
@@ -68,7 +67,7 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
             &mut filter,
             router_address,
             fund_vault_address,
-            strategy_address,
+            &strategy_addresses,
         )
         .await
         {
@@ -96,7 +95,7 @@ async fn scan(
     filter: &mut Filter,
     router_address: Address,
     fund_vault_address: Address,
-    strategy_address: Address,
+    strategy_address: &[Address],
 ) -> AppResult<BlockNumberOrTag> {
     let latest_block = client.get_block_number().await?;
     let from_block = filter.get_from_block().unwrap_or(latest_block);
@@ -128,7 +127,7 @@ async fn scan(
         let contract_address = log.address();
 
         if contract_address == router_address {
-            let decoded_log = Router::RouterEvents::decode_log(&log.inner)?;
+            let decoded_log = RouterEvents::decode_log(&log.inner)?;
 
             match decoded_log.data {
                 RouterEvents::DepositFund(event) => {
@@ -170,9 +169,9 @@ async fn scan(
                 _ => {}
             }
         } else if contract_address == fund_vault_address {
-            let _decoded_log = FundVault::FundVaultEvents::decode_log(&log.inner)?;
-        } else if contract_address == strategy_address {
-            let _decoded_log = Strategy::StrategyEvents::decode_log(&log.inner)?;
+            let _decoded_log = FundVaultEvents::decode_log(&log.inner)?;
+        } else if strategy_address.contains(&contract_address) {
+            let _decoded_log = StrategyEvents::decode_log(&log.inner)?;
         }
     }
 
