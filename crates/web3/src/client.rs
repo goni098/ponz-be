@@ -1,5 +1,3 @@
-use std::sync::LazyLock;
-
 use alloy::{
     network::EthereumWallet,
     providers::{
@@ -11,8 +9,8 @@ use alloy::{
     },
 };
 use alloy_chains::NamedChain;
-use solana_client::client_error::reqwest::Url;
-use strum::IntoEnumIterator;
+use shared::env::ENV;
+use url::Url;
 
 pub type PublicClient = RootProvider;
 
@@ -27,47 +25,22 @@ pub type WalletClient = FillProvider<
     RootProvider,
 >;
 
-pub fn public_client(rpc_url: Url) -> PublicClient {
+pub fn public_client(chain: NamedChain) -> PublicClient {
     ProviderBuilder::new()
         .disable_recommended_fillers()
-        .connect_http(rpc_url)
+        .connect_http(resolve_rpc_url(chain))
 }
 
-pub fn wallet_client(rpc_url: Url, wallet: EthereumWallet) -> WalletClient {
-    ProviderBuilder::new().wallet(wallet).connect_http(rpc_url)
+pub fn wallet_client(chain: NamedChain, wallet: EthereumWallet) -> WalletClient {
+    ProviderBuilder::new()
+        .wallet(wallet)
+        .connect_http(resolve_rpc_url(chain))
 }
 
-pub struct Clients {
-    sepolia: PublicClient,
-    main: PublicClient,
-    base: PublicClient,
-}
-
-pub static CLIENTS: LazyLock<Clients> = LazyLock::new(|| Clients {
-    base: public_client("rpc_url".parse().unwrap()),
-    main: public_client("rpc_url".parse().unwrap()),
-    sepolia: public_client("rpc_url".parse().unwrap()),
-});
-
-impl Clients {
-    pub fn get_by_chain(&self, chain: NamedChain) -> &PublicClient {
-        let chain = NamedChain::iter()
-            .find(|c| *c == chain)
-            .unwrap_or(NamedChain::Base);
-
-        match chain {
-            NamedChain::Base => &self.base,
-            NamedChain::Sepolia => &self.sepolia,
-            NamedChain::Mainnet => &self.main,
-            _ => &self.sepolia,
-        }
-    }
-
-    pub fn all(&self) -> [(&PublicClient, NamedChain); 3] {
-        [
-            (&self.base, NamedChain::Base),
-            (&self.main, NamedChain::Mainnet),
-            (&self.sepolia, NamedChain::ScrollSepolia),
-        ]
+fn resolve_rpc_url(chain: NamedChain) -> Url {
+    match chain {
+        NamedChain::Sepolia => ENV.sepolia_rpc_url.clone(),
+        NamedChain::Base => ENV.base_rpc_url.clone(),
+        _ => panic!("unsupported chain {}", chain),
     }
 }

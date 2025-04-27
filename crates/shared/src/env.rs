@@ -1,5 +1,7 @@
 use std::{env::VarError, sync::LazyLock};
 
+use url::Url;
+
 use crate::{AppError, AppResult};
 
 pub struct Env {
@@ -8,6 +10,8 @@ pub struct Env {
     pub solana_rpc_url: String,
     pub access_token_secret: String,
     pub renew_token_secret: String,
+    pub base_rpc_url: Url,
+    pub sepolia_rpc_url: Url,
 }
 
 pub static ENV: LazyLock<Env> = LazyLock::new(|| {
@@ -16,6 +20,8 @@ pub static ENV: LazyLock<Env> = LazyLock::new(|| {
     let solana_rpc_url = read_env("SOLANA_RPC_URL").unwrap();
     let access_token_secret = read_env("ACCESS_TOKEN_SECRET").unwrap();
     let renew_token_secret = read_env("RENEW_TOKEN_SECRET").unwrap();
+    let base_rpc_url = read_env("BASE_RPC_URL").unwrap().parse().unwrap();
+    let sepolia_rpc_url = read_env("SEPOLIA_RPC_URL").unwrap().parse().unwrap();
 
     Env {
         access_token_secret,
@@ -23,6 +29,8 @@ pub static ENV: LazyLock<Env> = LazyLock::new(|| {
         redis_url,
         renew_token_secret,
         solana_rpc_url,
+        base_rpc_url,
+        sepolia_rpc_url,
     }
 });
 

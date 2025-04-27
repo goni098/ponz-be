@@ -2,7 +2,7 @@ use alloy::primitives::{Address, TxHash};
 use alloy_chains::NamedChain;
 use sea_orm::{
     ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, prelude::DateTimeWithTimeZone,
+    QueryFilter, QuerySelect, prelude::DateTimeWithTimeZone,
 };
 use serde_json::Value;
 
@@ -15,6 +15,16 @@ pub async fn find_by_tx_hash(
     contract_event::Entity::find()
         .filter(contract_event::Column::TxHash.eq(tx_hash.to_string()))
         .one(db)
+        .await
+}
+
+pub async fn find_existed(db: &DatabaseConnection, list: &[TxHash]) -> Result<Vec<String>, DbErr> {
+    contract_event::Entity::find()
+        .select_only()
+        .column(contract_event::Column::TxHash)
+        .filter(contract_event::Column::TxHash.is_in(list.iter().map(ToString::to_string)))
+        .into_tuple()
+        .all(db)
         .await
 }
 

@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use alloy::{
     eips::BlockNumberOrTag,
-    primitives::Address,
+    primitives::{Address, TxHash},
     providers::Provider,
-    rpc::types::{Filter, FilterBlockOption, FilterSet},
+    rpc::types::{Filter, FilterBlockOption, FilterSet, Log},
     sol_types::SolEventInterface,
 };
 use alloy_chains::NamedChain;
@@ -12,28 +12,19 @@ use database::{
     repositories::{self, setting::Setting},
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
-use event_handlers::{
-    deposit::handle_deposit_event, distribute::handle_distribute_event,
-    rebalance::handle_rebalance_event, withdraw::handle_withdraw_event,
-};
+use event_handlers::{Event, handler};
 use futures_util::future::try_join_all;
 use shared::{AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
     client::{PublicClient, public_client},
     contracts::{
-        fund_vault::{
-            self,
-            FundVault::{self, FundVaultEvents},
-        },
+        fund_vault::{self, FundVault},
         router::{
             self,
             Router::{self, RouterEvents},
         },
-        strategy::{
-            self,
-            Strategy::{self},
-        },
+        strategy::{self, Strategy},
     },
 };
 
@@ -44,7 +35,7 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
 
-    let client = public_client("rpc_url".parse().unwrap());
+    let client = public_client(chain);
 
     let router_address = router::address(chain);
     let fund_vault_address = fund_vault::address(chain);
@@ -118,20 +109,22 @@ async fn scan(
 
     let logs = client.get_logs(filter).await?;
 
+    let hashes: Vec<TxHash> = logs.iter().filter_map(|log| log.transaction_hash).collect();
+
+    let existed_logs = repositories::contract_event::find_existed(db, &hashes).await?;
+
+    let logs: Vec<Log> = logs
+        .into_iter()
+        .filter(|log| {
+            log.transaction_hash
+                .is_some_and(|hash| !existed_logs.contains(&hash.to_string()))
+        })
+        .collect();
+
     let mut tasks = Vec::with_capacity(logs.len());
 
     for log in logs {
-        let Some(tx_hash) = log.transaction_hash else {
-            continue;
-        };
-
-        if repositories::contract_event::find_by_tx_hash(&db, tx_hash)
-            .await?
-            .is_some()
-        {
-            continue;
-        }
-
+        let tx_hash = log.transaction_hash.expect("exclude none above");
         let contract_address = log.address();
 
         if contract_address == router_address {
@@ -139,23 +132,47 @@ async fn scan(
 
             match decoded_log.data {
                 RouterEvents::DepositFund(event) => {
-                    handle_deposit_event(db, contract_address, tx_hash, chain, event).await?;
+                    tasks.push(handler(
+                        db,
+                        contract_address,
+                        tx_hash,
+                        chain,
+                        Event::Deposit(event),
+                    ));
                 }
                 RouterEvents::DistributeUserFund(event) => {
-                    handle_distribute_event(chain, event).await?;
+                    tasks.push(handler(
+                        db,
+                        contract_address,
+                        tx_hash,
+                        chain,
+                        Event::Distribute(event),
+                    ));
                 }
                 RouterEvents::RebalanceFundSameChain(event) => {
-                    handle_rebalance_event(chain, event).await?;
+                    tasks.push(handler(
+                        db,
+                        contract_address,
+                        tx_hash,
+                        chain,
+                        Event::Rebalance(event),
+                    ));
                 }
                 RouterEvents::WithDrawFundSameChain(event) => {
-                    handle_withdraw_event(chain, event).await?;
+                    tasks.push(handler(
+                        db,
+                        contract_address,
+                        tx_hash,
+                        chain,
+                        Event::Withdraw(event),
+                    ));
                 }
                 _ => {}
             }
         } else if contract_address == fund_vault_address {
-            let event = FundVault::FundVaultEvents::decode_log(&log.inner)?;
+            let _decoded_log = FundVault::FundVaultEvents::decode_log(&log.inner)?;
         } else if contract_address == strategy_address {
-            let event = Strategy::StrategyEvents::decode_log(&log.inner)?;
+            let _decoded_log = Strategy::StrategyEvents::decode_log(&log.inner)?;
         }
     }
 

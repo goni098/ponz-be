@@ -1,7 +1,10 @@
 use alloy_chains::NamedChain;
 use shared::AppResult;
-use web3::contracts::strategy::Strategy::Withdraw;
+use web3::contracts::router::Router::WithDrawFundSameChain;
 
-pub async fn handle_withdraw_event(chain: NamedChain, event: Withdraw) -> AppResult<()> {
+pub async fn handle_withdraw_event(
+    chain: NamedChain,
+    event: WithDrawFundSameChain,
+) -> AppResult<()> {
     Ok(())
 }
