@@ -8,13 +8,13 @@ use crate::{
     error::HttpResult,
     extractors::{
         state::Redis,
-        validation::{ValidatedParams, is_valid_pubkey},
+        validation::{ValidatedParams, is_evm_address},
     },
 };
 
 #[derive(Deserialize, Validate)]
 pub struct Params {
-    #[validate(custom(function = "is_valid_pubkey"))]
+    #[validate(custom(function = "is_evm_address"))]
     address: String,
 }
 

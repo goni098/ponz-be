@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use alloy::signers::Signature;
 use axum::{Json, extract::State};
 use chrono::{Duration, Utc};
 use database::{
@@ -10,24 +11,19 @@ use jsonwebtoken::{Algorithm, EncodingKey, Header};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use shared::env::ENV;
-use solana_sdk::{pubkey::Pubkey, signature::Signature};
-use validator::Validate;
 
 use crate::{
     error::{HttpException, HttpResult},
     extractors::{
         auth::{Claims, Sub},
         state::Redis,
-        validation::{ValidatedPayload, is_valid_pubkey},
     },
 };
 
-#[derive(Deserialize, Validate)]
+#[derive(Deserialize)]
 pub struct Payload {
     message: String,
     signature: String,
-    #[validate(custom(function = "is_valid_pubkey"))]
-    address: String,
 }
 
 #[derive(Serialize)]
@@ -39,16 +35,19 @@ pub struct Tokens {
 pub async fn handler(
     State(db): State<DatabaseConnection>,
     Redis(mut redis): Redis,
-    ValidatedPayload(payload): ValidatedPayload<Payload>,
+    Json(payload): Json<Payload>,
 ) -> HttpResult<Json<Tokens>> {
-    let Payload {
-        address,
-        message,
-        signature,
-    } = payload;
+    let Payload { message, signature } = payload;
+
+    let signature = Signature::from_str(&signature)
+        .map_err(|_| HttpException::Unauthorized("Invalid signature".into()))?;
+
+    let address = signature
+        .recover_address_from_msg(&message)
+        .map_err(|_| HttpException::Unauthorized("Wrong signature".into()))?;
 
     let stored_message = redis
-        .get::<&String, Option<String>>(&address)
+        .get::<&String, Option<String>>(&address.to_string())
         .await?
         .ok_or(HttpException::Unauthorized(
             "Message has not been created".into(),
@@ -58,21 +57,9 @@ pub async fn handler(
         return Err(HttpException::Unauthorized("Invalid messgage".into()));
     }
 
-    let sig = Signature::from_str(&signature)
-        .map_err(|_| HttpException::Unauthorized("Invalid signature".into()))?;
+    let user_id = user::create_if_not_exist(&db, address).await?;
 
-    let pubkey =
-        Pubkey::from_str(&address).map_err(|e| HttpException::BadRequest(e.to_string().into()))?;
-
-    let valid_signature = sig.verify(pubkey.as_ref(), message.as_bytes());
-
-    if !valid_signature {
-        return Err(HttpException::Unauthorized("Wrong signature".into()));
-    }
-
-    let user_id = user::create_if_not_exist(&db, pubkey.to_string()).await?;
-
-    let tokens = Tokens::sign_from(user_id, address)?;
+    let tokens = Tokens::sign_from(user_id, address.to_string())?;
 
     tokens.save_renew_token(user_id, &db).await?;
 
@@ -125,19 +112,19 @@ impl Tokens {
 
 #[cfg(test)]
 mod test {
-    use solana_sdk::{
-        signature::Keypair,
-        signer::{EncodableKey, Signer},
-    };
+    use alloy::signers::{SignerSync, local::PrivateKeySigner};
 
     #[test]
     fn gen_signature() {
         let message = "abcxyz";
-        let keypair = Keypair::read_from_file("/home/vitaminc/.config/solana/id.json").unwrap();
-        let signature = keypair.sign_message(message.as_bytes());
+        let signer = PrivateKeySigner::random();
 
-        assert!(signature.verify(keypair.pubkey().as_ref(), message.as_bytes()));
+        let signature = signer.sign_message_sync(message.as_bytes()).unwrap();
 
-        dbg!(signature);
+        let recovered = signature.recover_address_from_msg(message).unwrap();
+
+        assert_eq!(recovered, signer.address());
+
+        dbg!(signature.to_string());
     }
 }

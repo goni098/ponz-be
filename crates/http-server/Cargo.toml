@@ -23,11 +23,6 @@ validator = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
-shared = { path = "../shared" }
-database = { path = "../database" }
-
-solana-sdk = { workspace = true }
-solana-client = { workspace = true }
 
 redis = { workspace = true }
 
@@ -38,3 +33,6 @@ hex = { workspace = true }
 chrono = { workspace = true }
 
 alloy = { workspace = true }
+
+shared = { path = "../shared" }
+database = { path = "../database" }

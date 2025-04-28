@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
 use crate::error::HttpException;
+use alloy::primitives::Address;
 use axum::{
     Form, Json,
     extract::{
@@ -10,7 +11,6 @@ use axum::{
     http::request::Parts,
 };
 use serde::de::DeserializeOwned;
-use solana_sdk::pubkey::Pubkey;
 use validator::{Validate, ValidationError};
 
 pub struct ValidatedPath<P>(pub P);
@@ -78,10 +78,10 @@ where
     }
 }
 
-pub fn is_valid_pubkey(address: &str) -> Result<(), ValidationError> {
-    Pubkey::from_str(address)
+pub fn is_evm_address(address: &str) -> Result<(), ValidationError> {
+    Address::from_str(address)
         .map_err(|error| {
-            ValidationError::new("Invalid pubkey").with_message(error.to_string().into())
+            ValidationError::new("Invalid address").with_message(error.to_string().into())
         })
         .map(|_| ())
 }

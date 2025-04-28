@@ -1,22 +1,16 @@
-use std::sync::Arc;
-
 use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
 };
 use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use shared::{AppResult, env::ENV};
-use solana_client::nonblocking::rpc_client::RpcClient;
 
 use crate::error::{HttpException, HttpResult};
-
-pub type SolanaClient = Arc<RpcClient>;
 
 pub struct Redis(pub redis::aio::MultiplexedConnection);
 
 #[derive(FromRef, Clone)]
 pub struct AppState {
-    pub solana_client: SolanaClient,
     pub db_conn: DatabaseConnection,
     pub redis_client: redis::Client,
 }
@@ -44,12 +38,10 @@ impl AppState {
         opt.sqlx_logging(false);
 
         let db_conn = Database::connect(opt).await?;
-        let solana_client = Arc::new(RpcClient::new(ENV.solana_rpc_url.clone()));
         let redis_client = redis::Client::open(ENV.redis_url.as_str())?;
 
         Ok(Self {
             db_conn,
-            solana_client,
             redis_client,
         })
     }
