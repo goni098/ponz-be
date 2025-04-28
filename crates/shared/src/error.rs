@@ -64,6 +64,9 @@ pub enum AppError {
 
     #[error(transparent)]
     ParseInt(#[from] ParseIntError),
+
+    #[error(transparent)]
+    HttpClient(#[from] reqwest::Error),
 }
 
 impl AppError {

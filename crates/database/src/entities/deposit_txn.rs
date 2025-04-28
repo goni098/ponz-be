@@ -7,7 +7,6 @@ pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
     pub created_at: DateTimeWithTimeZone,
-    pub deposited_at: DateTimeWithTimeZone,
     pub chain_id: i64,
     pub receiver: String,
     pub token_address: String,

@@ -10,22 +10,22 @@ use crate::{entities::withdraw_txn, utils::to_decimal};
 pub async fn create(
     db_tx: &DatabaseTransaction,
     chain: NamedChain,
-    sender: Address,
     receiver: Address,
-    owner: Address,
-    assets: U256,
-    shares: U256,
+    user: Address,
+    strategy_address: Address,
+    token_address: Address,
+    share: U256,
     created_at: DateTimeWithTimeZone,
 ) -> Result<(), DbErr> {
     let txn = withdraw_txn::ActiveModel {
         chain_id: Set(chain as i64),
         id: Default::default(),
-        assets: Set(to_decimal(assets)?),
         created_at: Set(created_at),
-        owner: Set(owner.to_string()),
         receiver: Set(receiver.to_string()),
-        sender: Set(sender.to_string()),
-        shares: Set(to_decimal(shares)?),
+        share: Set(to_decimal(share)?),
+        strategy_address: Set(strategy_address.to_string()),
+        token_address: Set(token_address.to_string()),
+        user: Set(user.to_string()),
     };
 
     withdraw_txn::Entity::insert(txn).exec(db_tx).await?;

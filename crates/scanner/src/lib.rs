@@ -8,6 +8,7 @@ use alloy::{
     sol_types::SolEventInterface,
 };
 use alloy_chains::NamedChain;
+use chrono::Utc;
 use database::{
     repositories::{self, setting::Setting},
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
@@ -18,10 +19,7 @@ use shared::{AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
     client::{PublicClient, public_client},
-    contracts::{
-        fund_vault::FundVault::FundVaultEvents, router::Router::RouterEvents,
-        strategy::Strategy::StrategyEvents,
-    },
+    contracts::{referral::Refferal::RefferalEvents, router::Router::RouterEvents},
 };
 
 mod event_handlers;
@@ -37,8 +35,7 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let client = public_client(chain);
 
     let router_address = web3::get_router_contract_address(chain);
-    let fund_vault_address = web3::get_fund_vault_contract_address(chain);
-    let strategy_addresses = web3::get_all_supported_stratgies(chain);
+    let referral_address = web3::get_referral_address(chain);
 
     let current_scanned_block = {
         let scanned_block = repositories::setting::find(&db, Setting::ScannedBlock(chain)).await?;
@@ -50,8 +47,7 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         }
     };
 
-    let mut addresses_lookup = vec![router_address, fund_vault_address];
-    addresses_lookup.extend(strategy_addresses);
+    let addresses_lookup = vec![router_address, referral_address];
 
     let mut filter = Filter {
         address: FilterSet::from(addresses_lookup),
@@ -71,8 +67,7 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
             &db,
             &mut filter,
             router_address,
-            fund_vault_address,
-            &strategy_addresses,
+            referral_address,
         )
         .await
         {
@@ -104,8 +99,7 @@ async fn scan(
     db: &DatabaseConnection,
     filter: &mut Filter,
     router_address: Address,
-    fund_vault_address: Address,
-    strategy_address: &[Address],
+    referral_address: Address,
 ) -> AppResult<BlockNumberOrTag> {
     let latest_block = client.get_block_number().await?;
     let from_block = filter.get_from_block().unwrap_or(latest_block);
@@ -133,6 +127,10 @@ async fn scan(
     let mut tasks = Vec::with_capacity(logs.len());
 
     for log in logs {
+        let block_timestamp = log
+            .block_timestamp
+            .unwrap_or_else(|| Utc::now().timestamp() as u64);
+
         let tx_hash = log.transaction_hash.expect("exclude none above");
         let contract_address = log.address();
 
@@ -147,6 +145,7 @@ async fn scan(
                         tx_hash,
                         chain,
                         Event::Deposit(event),
+                        block_timestamp,
                     ));
                 }
                 RouterEvents::DistributeUserFund(event) => {
@@ -156,6 +155,7 @@ async fn scan(
                         tx_hash,
                         chain,
                         Event::Distribute(event),
+                        block_timestamp,
                     ));
                 }
                 RouterEvents::RebalanceFundSameChain(event) => {
@@ -165,35 +165,33 @@ async fn scan(
                         tx_hash,
                         chain,
                         Event::Rebalance(event),
+                        block_timestamp,
                     ));
                 }
-                _ => {}
-            }
-        } else if contract_address == fund_vault_address {
-            let _decoded_log = FundVaultEvents::decode_log(&log.inner)?;
-        } else if strategy_address.contains(&contract_address) {
-            let decoded_log = StrategyEvents::decode_log(&log.inner)?;
-
-            match decoded_log.data {
-                StrategyEvents::Withdraw(event) => {
+                RouterEvents::WithDrawFundSameChain(event) => {
                     tasks.push(handler(
                         db,
                         contract_address,
                         tx_hash,
                         chain,
                         Event::Withdraw(event),
-                    ));
-                }
-                StrategyEvents::ClaimRewardStrategy(event) => {
-                    tasks.push(handler(
-                        db,
-                        contract_address,
-                        tx_hash,
-                        chain,
-                        Event::Claim(event),
+                        block_timestamp,
                     ));
                 }
                 _ => {}
+            }
+        } else if contract_address == referral_address {
+            let decoded_log = RefferalEvents::decode_log(&log.inner)?;
+
+            if let RefferalEvents::Claim(event) = decoded_log.data {
+                tasks.push(handler(
+                    db,
+                    contract_address,
+                    tx_hash,
+                    chain,
+                    Event::Claim(event),
+                    block_timestamp,
+                ));
             }
         }
     }

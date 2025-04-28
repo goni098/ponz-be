@@ -1,12 +1,12 @@
 use alloy::primitives::{Address, TxHash};
 use alloy_chains::NamedChain;
-use chrono::Utc;
+use chrono::DateTime;
 use database::{
     enums::ContractEventName,
     repositories,
-    sea_orm::{DatabaseConnection, TransactionTrait, prelude::DateTimeWithTimeZone},
+    sea_orm::{DatabaseConnection, TransactionTrait},
 };
-use shared::AppResult;
+use shared::{AppError, AppResult};
 use web3::contracts::router::Router::RebalanceFundSameChain;
 
 pub async fn handle_rebalance_event(
@@ -15,6 +15,7 @@ pub async fn handle_rebalance_event(
     tx_hash: TxHash,
     chain: NamedChain,
     event: RebalanceFundSameChain,
+    block_timestamp: u64,
 ) -> AppResult<()> {
     let args = serde_json::json!({
         "strategyAddress": event.strategyAddress.to_string(),
@@ -24,7 +25,8 @@ pub async fn handle_rebalance_event(
         "receivedReward": event.receivedReward.to_string(),
     });
 
-    let created_at = DateTimeWithTimeZone::from(Utc::now());
+    let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
+        .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
     let db_tx = db.begin().await?;
 
@@ -35,7 +37,7 @@ pub async fn handle_rebalance_event(
         args,
         chain,
         tx_hash,
-        created_at,
+        created_at.into(),
     )
     .await?;
 
@@ -47,7 +49,7 @@ pub async fn handle_rebalance_event(
         event.underlyingAsset,
         event.receivedAmount,
         event.receivedReward,
-        created_at,
+        created_at.into(),
     )
     .await?;
 

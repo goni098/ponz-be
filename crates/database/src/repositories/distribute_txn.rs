@@ -1,7 +1,9 @@
 use alloy::primitives::{Address, U256};
 use alloy_chains::NamedChain;
+use chrono::{Days, Utc};
 use sea_orm::{
-    ActiveValue::Set, DatabaseTransaction, DbErr, EntityTrait, prelude::DateTimeWithTimeZone,
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
+    QueryFilter, prelude::DateTimeWithTimeZone,
 };
 
 use crate::{entities::distribute_txn, utils::to_decimal};
@@ -26,9 +28,24 @@ pub async fn create(
         depositor: Set(depositor.to_string()),
         strategy_address: Set(strategy_address.to_string()),
         swap_contract: Set(swap_contract.to_string()),
+        is_rebalanced: Set(false),
     };
 
     distribute_txn::Entity::insert(txn).exec(db_tx).await?;
 
     Ok(())
+}
+
+pub async fn find_all_unrebalanced_and_order_than_10days(
+    db: &DatabaseConnection,
+) -> Result<Vec<distribute_txn::Model>, DbErr> {
+    let date = Utc::now()
+        .checked_sub_days(Days::new(10))
+        .ok_or(DbErr::Custom("sub days error".to_string()))?;
+
+    distribute_txn::Entity::find()
+        .filter(distribute_txn::Column::IsRebalanced.eq(false))
+        .filter(distribute_txn::Column::CreatedAt.lte(date))
+        .all(db)
+        .await
 }

@@ -15,6 +15,7 @@ pub async fn handle_deposit_event(
     tx_hash: TxHash,
     chain: NamedChain,
     event: DepositFund,
+    block_timestamp: u64,
 ) -> AppResult<()> {
     let args = serde_json::json!({
         "receiver": event.receiver.to_string(),
@@ -24,8 +25,8 @@ pub async fn handle_deposit_event(
         "depositedAt": event.depositedAt.to_string(),
     });
 
-    let deposited_at = DateTime::from_timestamp(event.depositedAt.to(), 0)
-        .ok_or(AppError::Custom("Invalid depositedAt timestamp".into()))?;
+    let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
+        .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
     let db_tx = db.begin().await?;
 
@@ -36,7 +37,7 @@ pub async fn handle_deposit_event(
         args,
         chain,
         tx_hash,
-        deposited_at.into(),
+        created_at.into(),
     )
     .await?;
 
@@ -47,8 +48,7 @@ pub async fn handle_deposit_event(
         event.tokenAddress,
         event.depositAmount,
         event.actualDepositAmount,
-        deposited_at.into(),
-        deposited_at.into(),
+        created_at.into(),
     )
     .await?;
 

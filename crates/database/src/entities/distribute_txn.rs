@@ -14,6 +14,7 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub amount: Decimal,
     pub swap_contract: String,
+    pub is_rebalanced: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

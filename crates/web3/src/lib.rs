@@ -20,6 +20,9 @@ const SEPOLIA_AERODROME_CONTRACT_ADDRESS: Address =
 const SEPOLIA_BALANCER_CONTRACT_ADDRESS: Address =
     address!("C7BD65B79389a8Ef52E3a7aFDA663fe11f78b361");
 
+const SEPOLIA_REFERRAL_CONTRACT_ADDRESS: Address =
+    address!("39a18374B0357572E23c17F3057a2B0D8ed684A5");
+
 // Base chain
 const BASE_CHAIN_FUND_VAULT_CONTRACT_ADDRESS: Address =
     address!("1d9aafd68c9f8b5f6deb25c8243e86c31ea9f102");
@@ -36,6 +39,9 @@ const BASE_CHAIN_AERODROME_CONTRACT_ADDRESS: Address =
 const BASE_CHAIN_BALANCER_CONTRACT_ADDRESS: Address =
     address!("d9eC31EFcDB4d98e6578eCB70b970eC60a064Fc2");
 
+const BASE_CHAIN_REFERRAL_CONTRACT_ADDRESS: Address =
+    address!("39a18374B0357572E23c17F3057a2B0D8ed684A5");
+
 pub fn get_fund_vault_contract_address(chain: NamedChain) -> Address {
     match chain {
         NamedChain::Base => BASE_CHAIN_FUND_VAULT_CONTRACT_ADDRESS,
@@ -48,6 +54,14 @@ pub fn get_router_contract_address(chain: NamedChain) -> Address {
     match chain {
         NamedChain::Base => BASE_CHAIN_ROUTER_CONTRACT_ADDRESS,
         NamedChain::Sepolia => SEPOLIA_ROUTER_CONTRACT_ADDRESS,
+        _ => panic!("unsupported chain {}", chain),
+    }
+}
+
+pub fn get_referral_address(chain: NamedChain) -> Address {
+    match chain {
+        NamedChain::Base => BASE_CHAIN_REFERRAL_CONTRACT_ADDRESS,
+        NamedChain::Sepolia => SEPOLIA_REFERRAL_CONTRACT_ADDRESS,
         _ => panic!("unsupported chain {}", chain),
     }
 }

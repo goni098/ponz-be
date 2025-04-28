@@ -8,13 +8,12 @@ pub struct Model {
     pub id: i64,
     pub created_at: DateTimeWithTimeZone,
     pub chain_id: i64,
-    pub sender: String,
     pub receiver: String,
-    pub owner: String,
+    pub user: String,
+    pub strategy_address: String,
+    pub token_address: String,
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
-    pub assets: Decimal,
-    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
-    pub shares: Decimal,
+    pub share: Decimal,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -7,24 +7,24 @@ use database::{
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
-use web3::contracts::strategy::Strategy::ClaimRewardStrategy;
+use web3::contracts::referral::Refferal::Claim;
 
 pub async fn handle_claim_event(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
     chain: NamedChain,
-    event: ClaimRewardStrategy,
+    event: Claim,
+    block_timestamp: u64,
 ) -> AppResult<()> {
     let args = serde_json::json!({
-        "actualDepositAmount": event.withdrawer.to_string(),
-        "receiver": event.receiver.to_string(),
-        "depositAmount": event.token.to_string(),
-        "tokenAddress": event.claimedAt.to_string(),
+        "amount": event.amount.to_string(),
+        "from": event.from.to_string(),
+        "to": event.to.to_string(),
     });
 
-    let claimed_at = DateTime::from_timestamp(event.claimedAt.to(), 0)
-        .ok_or(AppError::Custom("Invalid claimedAt timestamp".into()))?;
+    let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
+        .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
     let db_tx = db.begin().await?;
 
@@ -35,18 +35,17 @@ pub async fn handle_claim_event(
         args,
         chain,
         tx_hash,
-        claimed_at.into(),
+        created_at.into(),
     )
     .await?;
 
     repositories::claim_txn::create(
         &db_tx,
         chain,
-        event.receiver,
-        event.withdrawer,
-        event.token,
-        claimed_at.into(),
-        claimed_at.into(),
+        event.amount,
+        event.from,
+        event.to,
+        created_at.into(),
     )
     .await?;
 

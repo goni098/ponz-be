@@ -9,3 +9,4 @@ alloy-chains = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 alloy = { workspace = true }
+chrono = { workspace = true }

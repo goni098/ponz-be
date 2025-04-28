@@ -7,8 +7,10 @@ use distribute::handle_distribute_event;
 use rebalance::handle_rebalance_event;
 use shared::AppResult;
 use web3::contracts::{
-    router::Router::{DepositFund, DistributeUserFund, RebalanceFundSameChain},
-    strategy::Strategy::{ClaimRewardStrategy, Withdraw},
+    referral::Refferal::Claim,
+    router::Router::{
+        DepositFund, DistributeUserFund, RebalanceFundSameChain, WithDrawFundSameChain,
+    },
 };
 use withdraw::handle_withdraw_event;
 
@@ -21,9 +23,9 @@ mod withdraw;
 pub enum Event {
     Deposit(DepositFund),
     Distribute(DistributeUserFund),
-    Withdraw(Withdraw),
+    Withdraw(WithDrawFundSameChain),
     Rebalance(RebalanceFundSameChain),
-    Claim(ClaimRewardStrategy),
+    Claim(Claim),
 }
 
 pub async fn handler(
@@ -32,22 +34,26 @@ pub async fn handler(
     tx_hash: TxHash,
     chain: NamedChain,
     event: Event,
+    block_timestamp: u64,
 ) -> AppResult<()> {
     match event {
         Event::Deposit(event) => {
-            handle_deposit_event(db, contract_address, tx_hash, chain, event).await
+            handle_deposit_event(db, contract_address, tx_hash, chain, event, block_timestamp).await
         }
         Event::Distribute(event) => {
-            handle_distribute_event(db, contract_address, tx_hash, chain, event).await
+            handle_distribute_event(db, contract_address, tx_hash, chain, event, block_timestamp)
+                .await
         }
         Event::Rebalance(event) => {
-            handle_rebalance_event(db, contract_address, tx_hash, chain, event).await
+            handle_rebalance_event(db, contract_address, tx_hash, chain, event, block_timestamp)
+                .await
         }
         Event::Withdraw(event) => {
-            handle_withdraw_event(db, contract_address, tx_hash, chain, event).await
+            handle_withdraw_event(db, contract_address, tx_hash, chain, event, block_timestamp)
+                .await
         }
         Event::Claim(event) => {
-            handle_claim_event(db, contract_address, tx_hash, chain, event).await
+            handle_claim_event(db, contract_address, tx_hash, chain, event, block_timestamp).await
         }
     }
 }

@@ -3,9 +3,19 @@ name = "operator"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "sepolia-operator"
+path = "./src/bin/sepolia/main.rs"
+
+[[bin]]
+name = "base-operator"
+path = "./src/bin/base/main.rs"
+
 [dependencies]
 tokio = { workspace = true }
 futures-util = { workspace = true }
+tracing = { workspace = true }
+alloy-chains = { workspace = true }
 
 shared = { path = "../shared" }
 pools = { path = "../pools" }

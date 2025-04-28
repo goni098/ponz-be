@@ -8,10 +8,10 @@ pub struct Model {
     pub id: i64,
     pub created_at: DateTimeWithTimeZone,
     pub chain_id: i64,
-    pub claimed_at: DateTimeWithTimeZone,
-    pub withdrawer: String,
-    pub receiver: String,
-    pub token: String,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub amount: Decimal,
+    pub from: String,
+    pub to: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

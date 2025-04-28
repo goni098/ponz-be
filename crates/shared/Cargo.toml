@@ -21,3 +21,5 @@ base64 = { workspace = true }
 alloy = { workspace = true }
 
 url = { workspace = true }
+
+reqwest = { workspace = true }

@@ -18,7 +18,6 @@ model renew_token {
 model deposit_txn {
   id                    BigInt   @id @default(autoincrement())
   created_at            DateTime @db.Timestamptz(3)
-  deposited_at          DateTime @db.Timestamptz(3)
   chain_id              BigInt
   receiver              String   @db.VarChar(42)
   token_address         String   @db.VarChar(42)
@@ -28,14 +27,14 @@ model deposit_txn {
 }
 
 model withdraw_txn {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @db.Timestamptz(3)
-  chain_id   BigInt
-  sender     String   @db.VarChar(42)
-  receiver   String   @db.VarChar(42)
-  owner      String   @db.VarChar(42)
-  assets     Decimal  @db.Decimal(90, 0)
-  shares     Decimal  @db.Decimal(90, 0)
+  id               BigInt   @id @default(autoincrement())
+  created_at       DateTime @db.Timestamptz(3)
+  chain_id         BigInt
+  receiver         String   @db.VarChar(42)
+  user             String   @db.VarChar(42)
+  strategy_address String   @db.VarChar(42)
+  token_address    String   @db.VarChar(42)
+  share            Decimal  @db.Decimal(90, 0)
 }
 
 model distribute_txn {
@@ -46,17 +45,17 @@ model distribute_txn {
   depositor               String   @db.VarChar(42)
   deposited_token_address String   @db.VarChar(42)
   amount                  Decimal  @db.Decimal(90, 0)
-  swap_contract           String   @db.VarChar
+  swap_contract           String   @db.VarChar(42)
+  is_rebalanced           Boolean
 }
 
 model claim_txn {
   id         BigInt   @id @default(autoincrement())
   created_at DateTime @db.Timestamptz(3)
   chain_id   BigInt
-  claimed_at DateTime @db.Timestamptz(3)
-  withdrawer String   @db.VarChar(42)
-  receiver   String   @db.VarChar(42)
-  token      String   @db.VarChar(42)
+  amount     Decimal  @db.Decimal(90, 0)
+  from       String   @db.VarChar(42)
+  to         String   @db.VarChar(42)
 }
 
 model rebalance_txn {
