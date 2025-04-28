@@ -28,12 +28,14 @@ pub type WalletClient = FillProvider<
 pub fn public_client(chain: NamedChain) -> PublicClient {
     ProviderBuilder::new()
         .disable_recommended_fillers()
+        .with_chain(chain)
         .connect_http(resolve_rpc_url(chain))
 }
 
 pub fn wallet_client(chain: NamedChain, wallet: EthereumWallet) -> WalletClient {
     ProviderBuilder::new()
         .wallet(wallet)
+        .with_chain(chain)
         .connect_http(resolve_rpc_url(chain))
 }
 
