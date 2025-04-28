@@ -4,8 +4,8 @@ use alloy::{
     eips::BlockNumberOrTag,
     primitives::{Address, TxHash},
     providers::Provider,
-    rpc::types::{Filter, FilterBlockOption, FilterSet, Log},
-    sol_types::SolEventInterface,
+    rpc::types::{Filter, FilterBlockOption, Log},
+    sol_types::{SolEvent, SolEventInterface},
 };
 use alloy_chains::NamedChain;
 use chrono::Utc;
@@ -19,7 +19,13 @@ use shared::{AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
     client::{PublicClient, public_client},
-    contracts::{referral::Refferal::RefferalEvents, router::Router::RouterEvents},
+    contracts::{
+        referral::Refferal::{Claim, RefferalEvents},
+        router::Router::{
+            DepositFund, DistributeUserFund, RebalanceFundSameChain, RouterEvents,
+            WithDrawFundSameChain,
+        },
+    },
 };
 
 mod event_handlers;
@@ -47,16 +53,16 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         }
     };
 
-    let addresses_lookup = vec![router_address, referral_address];
-
-    let mut filter = Filter {
-        address: FilterSet::from(addresses_lookup),
-        block_option: FilterBlockOption::Range {
-            from_block: Some(BlockNumberOrTag::Number(current_scanned_block)),
-            to_block: None,
-        },
-        ..Default::default()
-    };
+    let mut filter = Filter::new()
+        .address(vec![router_address, referral_address])
+        .events([
+            DepositFund::SIGNATURE,
+            DistributeUserFund::SIGNATURE,
+            RebalanceFundSameChain::SIGNATURE,
+            WithDrawFundSameChain::SIGNATURE,
+            Claim::SIGNATURE,
+        ])
+        .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
     tracing::info!("🦀 starting scanner on {}...", chain);
 
