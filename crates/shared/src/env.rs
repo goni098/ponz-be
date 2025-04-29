@@ -1,8 +1,6 @@
-use std::{env::VarError, sync::LazyLock};
+use std::sync::LazyLock;
 
 use url::Url;
-
-use crate::{AppError, AppResult};
 
 pub struct Env {
     pub db_url: String,
@@ -16,14 +14,14 @@ pub struct Env {
 }
 
 pub static ENV: LazyLock<Env> = LazyLock::new(|| {
-    let db_url = read_env("DATABASE_URL").unwrap();
-    let redis_url = read_env("REDIS_URL").unwrap();
-    let solana_rpc_url = read_env("SOLANA_RPC_URL").unwrap();
-    let access_token_secret = read_env("ACCESS_TOKEN_SECRET").unwrap();
-    let renew_token_secret = read_env("RENEW_TOKEN_SECRET").unwrap();
-    let base_rpc_url = read_env("BASE_RPC_URL").unwrap().parse().unwrap();
-    let sepolia_rpc_url = read_env("SEPOLIA_RPC_URL").unwrap().parse().unwrap();
-    let operator_pk = read_env("OPERATOR_PK").unwrap();
+    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let redis_url = std::env::var("REDIS_URL").unwrap();
+    let solana_rpc_url = std::env::var("SOLANA_RPC_URL").unwrap();
+    let access_token_secret = std::env::var("ACCESS_TOKEN_SECRET").unwrap();
+    let renew_token_secret = std::env::var("RENEW_TOKEN_SECRET").unwrap();
+    let base_rpc_url = std::env::var("BASE_RPC_URL").unwrap().parse().unwrap();
+    let sepolia_rpc_url = std::env::var("SEPOLIA_RPC_URL").unwrap().parse().unwrap();
+    let operator_pk = std::env::var("OPERATOR_PK").unwrap();
 
     Env {
         access_token_secret,
@@ -36,14 +34,3 @@ pub static ENV: LazyLock<Env> = LazyLock::new(|| {
         operator_pk,
     }
 });
-
-fn read_env(env: &str) -> AppResult<String> {
-    std::env::var(env).map_err(|error| match error {
-        VarError::NotUnicode(message) => {
-            AppError::EnvError(message.to_str().unwrap_or_default().to_string().into())
-        }
-        VarError::NotPresent => {
-            AppError::EnvError(format!("Missing {} env configuration", env).into())
-        }
-    })
-}

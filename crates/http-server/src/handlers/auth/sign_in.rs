@@ -4,6 +4,7 @@ use alloy::signers::Signature;
 use axum::{Json, extract::State};
 use chrono::{Duration, Utc};
 use database::{
+    models::User,
     repositories::{self, user},
     sea_orm::{DatabaseConnection, DbErr},
 };
@@ -57,17 +58,17 @@ pub async fn handler(
         return Err(HttpException::Unauthorized("Invalid messgage".into()));
     }
 
-    let user_id = user::create_if_not_exist(&db, address).await?;
+    let user = user::create_if_not_exist(&db, address).await?;
 
-    let tokens = Tokens::sign_from(user_id, address.to_string())?;
+    let tokens = Tokens::sign_from(&user)?;
 
-    tokens.save_renew_token(user_id, &db).await?;
+    tokens.save_renew_token(user.id, &db).await?;
 
     Ok(Json(tokens))
 }
 
 impl Tokens {
-    pub fn sign_from(user_id: i64, address: String) -> HttpResult<Self> {
+    pub fn sign_from(user: &User) -> HttpResult<Self> {
         let header = Header::new(Algorithm::HS256);
 
         let access_secret_key = EncodingKey::from_secret(ENV.access_token_secret.as_bytes());
@@ -80,20 +81,20 @@ impl Tokens {
 
         let claims = Claims {
             exp: access_exp as u32,
-            id: user_id,
-            address,
+            id: user.id,
+            address: user.address.parse().expect("it can not be"),
         };
 
         let sub = Sub {
             exp: renew_exp as u32,
-            sub: user_id,
+            sub: user.id,
         };
 
         let access_token = jsonwebtoken::encode(&header, &claims, &access_secret_key)
-            .map_err(|e| HttpException::Unauthorized(e.to_string().into()))?;
+            .map_err(|e| HttpException::Internal(e.to_string().into()))?;
 
         let renew_token = jsonwebtoken::encode(&header, &sub, &renew_secret_key)
-            .map_err(|e| HttpException::Unauthorized(e.to_string().into()))?;
+            .map_err(|e| HttpException::Internal(e.to_string().into()))?;
 
         Ok(Self {
             access_token,

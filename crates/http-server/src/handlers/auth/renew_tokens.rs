@@ -35,7 +35,7 @@ pub async fn handler(
         .await?
         .ok_or(HttpException::Internal("User not found".into()))?;
 
-    let tokens = Tokens::sign_from(user.id, user.address)?;
+    let tokens = Tokens::sign_from(&user)?;
 
     tokens.save_renew_token(user.id, &db).await?;
 

@@ -1,13 +1,13 @@
 use alloy::primitives::Address;
 use sea_orm::{ActiveValue::Set, ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter};
 
-use crate::entities::user;
+use crate::{entities::user, models::User};
 
 pub async fn find_by_id(db: &DatabaseConnection, id: i64) -> Result<Option<user::Model>, DbErr> {
     user::Entity::find_by_id(id).one(db).await
 }
 
-pub async fn create_if_not_exist(db: &DatabaseConnection, address: Address) -> Result<i64, DbErr> {
+pub async fn create_if_not_exist(db: &DatabaseConnection, address: Address) -> Result<User, DbErr> {
     let address = address.to_string();
 
     let user = user::Entity::find()
@@ -16,16 +16,12 @@ pub async fn create_if_not_exist(db: &DatabaseConnection, address: Address) -> R
         .await?;
 
     if let Some(user) = user {
-        return Ok(user.id);
+        return Ok(user);
     }
-
-    let user_id = user::Entity::insert(user::ActiveModel {
+    user::Entity::insert(user::ActiveModel {
         address: Set(address),
         id: Default::default(),
     })
-    .exec(db)
-    .await?
-    .last_insert_id;
-
-    Ok(user_id)
+    .exec_with_returning(db)
+    .await
 }

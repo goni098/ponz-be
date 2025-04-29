@@ -2,6 +2,7 @@ use crate::error::{
     HttpException::{self, *},
     HttpResult,
 };
+use alloy::primitives::Address;
 use axum::{RequestPartsExt, extract::FromRequestParts, http::request::Parts};
 use axum_extra::{
     TypedHeader,
@@ -15,7 +16,7 @@ use shared::env::ENV;
 pub struct Claims {
     pub exp: u32,
     pub id: i64,
-    pub address: String,
+    pub address: Address,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
