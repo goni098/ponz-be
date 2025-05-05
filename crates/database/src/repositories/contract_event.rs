@@ -40,6 +40,7 @@ pub async fn find_existed(
         .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn create(
     db_tx: &DatabaseTransaction,
     name: ContractEventName,

@@ -14,14 +14,22 @@ pub struct Env {
 }
 
 pub static ENV: LazyLock<Env> = LazyLock::new(|| {
-    let db_url = std::env::var("DATABASE_URL").unwrap();
-    let redis_url = std::env::var("REDIS_URL").unwrap();
-    let solana_rpc_url = std::env::var("SOLANA_RPC_URL").unwrap();
-    let access_token_secret = std::env::var("ACCESS_TOKEN_SECRET").unwrap();
-    let renew_token_secret = std::env::var("RENEW_TOKEN_SECRET").unwrap();
-    let base_rpc_url = std::env::var("BASE_RPC_URL").unwrap().parse().unwrap();
-    let sepolia_rpc_url = std::env::var("SEPOLIA_RPC_URL").unwrap().parse().unwrap();
-    let operator_pk = std::env::var("OPERATOR_PK").unwrap();
+    let db_url = std::env::var("DATABASE_URL").expect("missing DATABASE_URL");
+    let redis_url = std::env::var("REDIS_URL").expect("missing REDIS_URL");
+    let solana_rpc_url = std::env::var("SOLANA_RPC_URL").expect("missing SOLANA_RPC_URL");
+    let access_token_secret =
+        std::env::var("ACCESS_TOKEN_SECRET").expect("missing ACCESS_TOKEN_SECRET");
+    let renew_token_secret =
+        std::env::var("RENEW_TOKEN_SECRET").expect("missing RENEW_TOKEN_SECRET");
+    let base_rpc_url = std::env::var("BASE_RPC_URL")
+        .expect("missing ")
+        .parse()
+        .expect("missing BASE_RPC_URL");
+    let sepolia_rpc_url = std::env::var("SEPOLIA_RPC_URL")
+        .expect("missing ")
+        .parse()
+        .expect("missing SEPOLIA_RPC_URL");
+    let operator_pk = std::env::var("OPERATOR_PK").expect("missing OPERATOR_PK");
 
     Env {
         access_token_secret,
