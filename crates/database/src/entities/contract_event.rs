@@ -11,8 +11,8 @@ pub struct Model {
     pub created_at: DateTimeWithTimeZone,
     pub chain_id: i64,
     pub contract_address: String,
-    #[sea_orm(unique)]
     pub tx_hash: String,
+    pub log_index: i32,
     pub name: ContractEventName,
     #[sea_orm(column_type = "JsonBinary")]
     pub args: Json,

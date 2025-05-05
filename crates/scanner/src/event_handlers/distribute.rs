@@ -13,6 +13,7 @@ pub async fn handle_distribute_event(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
+    log_index: i32,
     chain: NamedChain,
     event: DistributeUserFund,
     block_timestamp: u64,
@@ -37,6 +38,7 @@ pub async fn handle_distribute_event(
         args,
         chain,
         tx_hash,
+        log_index,
         created_at.into(),
     )
     .await?;

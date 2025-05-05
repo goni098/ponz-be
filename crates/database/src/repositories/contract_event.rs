@@ -1,8 +1,8 @@
 use alloy::primitives::{Address, TxHash};
 use alloy_chains::NamedChain;
 use sea_orm::{
-    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, QuerySelect, prelude::DateTimeWithTimeZone,
+    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbErr,
+    EntityTrait, QueryFilter, QuerySelect, prelude::DateTimeWithTimeZone,
 };
 use serde_json::Value;
 
@@ -18,11 +18,23 @@ pub async fn find_by_tx_hash(
         .await
 }
 
-pub async fn find_existed(db: &DatabaseConnection, list: &[TxHash]) -> Result<Vec<String>, DbErr> {
+pub async fn find_existed(
+    db: &DatabaseConnection,
+    list: &[(TxHash, u64)],
+) -> Result<Vec<(String, u64)>, DbErr> {
+    let mut filter = Condition::any();
+
+    for (tx_hash, log_index) in list {
+        filter = filter
+            .add(contract_event::Column::TxHash.eq(tx_hash.to_string()))
+            .add(contract_event::Column::LogIndex.eq(*log_index));
+    }
+
     contract_event::Entity::find()
         .select_only()
         .column(contract_event::Column::TxHash)
-        .filter(contract_event::Column::TxHash.is_in(list.iter().map(ToString::to_string)))
+        .column(contract_event::Column::LogIndex)
+        .filter(filter)
         .into_tuple()
         .all(db)
         .await
@@ -35,6 +47,7 @@ pub async fn create(
     args: Value,
     chain: NamedChain,
     tx_hash: TxHash,
+    log_index: i32,
     created_at: DateTimeWithTimeZone,
 ) -> Result<(), DbErr> {
     let event = contract_event::ActiveModel {
@@ -45,6 +58,7 @@ pub async fn create(
         id: Default::default(),
         name: Set(name),
         tx_hash: Set(tx_hash.to_string()),
+        log_index: Set(log_index),
     };
 
     contract_event::Entity::insert(event).exec(db_tx).await?;

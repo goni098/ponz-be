@@ -118,15 +118,22 @@ async fn scan(
 
     let logs = client.get_logs(filter).await?;
 
-    let hashes: Vec<TxHash> = logs.iter().filter_map(|log| log.transaction_hash).collect();
+    let tx_hash_and_log_index_list: Vec<(TxHash, u64)> = logs
+        .iter()
+        .filter_map(|log| log.transaction_hash.zip(log.log_index))
+        .collect();
 
-    let existed_logs = repositories::contract_event::find_existed(db, &hashes).await?;
+    let resolved_list =
+        repositories::contract_event::find_existed(db, &tx_hash_and_log_index_list).await?;
 
     let logs: Vec<Log> = logs
         .into_iter()
         .filter(|log| {
             log.transaction_hash
-                .is_some_and(|hash| !existed_logs.contains(&hash.to_string()))
+                .as_ref()
+                .map(ToString::to_string)
+                .zip(log.log_index)
+                .is_some_and(|tx_hash_and_log_index| resolved_list.contains(&tx_hash_and_log_index))
         })
         .collect();
 
@@ -138,6 +145,8 @@ async fn scan(
             .unwrap_or_else(|| Utc::now().timestamp() as u64);
 
         let tx_hash = log.transaction_hash.expect("exclude none above");
+        let log_index = log.log_index.expect("exclude above") as i32;
+
         let contract_address = log.address();
 
         if contract_address == router_address {
@@ -149,6 +158,7 @@ async fn scan(
                         db,
                         contract_address,
                         tx_hash,
+                        log_index,
                         chain,
                         Event::Deposit(event),
                         block_timestamp,
@@ -159,6 +169,7 @@ async fn scan(
                         db,
                         contract_address,
                         tx_hash,
+                        log_index,
                         chain,
                         Event::Distribute(event),
                         block_timestamp,
@@ -169,6 +180,7 @@ async fn scan(
                         db,
                         contract_address,
                         tx_hash,
+                        log_index,
                         chain,
                         Event::Rebalance(event),
                         block_timestamp,
@@ -179,6 +191,7 @@ async fn scan(
                         db,
                         contract_address,
                         tx_hash,
+                        log_index,
                         chain,
                         Event::Withdraw(event),
                         block_timestamp,
@@ -194,6 +207,7 @@ async fn scan(
                     db,
                     contract_address,
                     tx_hash,
+                    log_index,
                     chain,
                     Event::Claim(event),
                     block_timestamp,

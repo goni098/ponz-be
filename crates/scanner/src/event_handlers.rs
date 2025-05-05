@@ -32,28 +32,71 @@ pub async fn handler(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
+    log_index: i32,
     chain: NamedChain,
     event: Event,
     block_timestamp: u64,
 ) -> AppResult<()> {
     match event {
         Event::Deposit(event) => {
-            handle_deposit_event(db, contract_address, tx_hash, chain, event, block_timestamp).await
+            handle_deposit_event(
+                db,
+                contract_address,
+                tx_hash,
+                log_index,
+                chain,
+                event,
+                block_timestamp,
+            )
+            .await
         }
         Event::Distribute(event) => {
-            handle_distribute_event(db, contract_address, tx_hash, chain, event, block_timestamp)
-                .await
+            handle_distribute_event(
+                db,
+                contract_address,
+                tx_hash,
+                log_index,
+                chain,
+                event,
+                block_timestamp,
+            )
+            .await
         }
         Event::Rebalance(event) => {
-            handle_rebalance_event(db, contract_address, tx_hash, chain, event, block_timestamp)
-                .await
+            handle_rebalance_event(
+                db,
+                contract_address,
+                tx_hash,
+                log_index,
+                chain,
+                event,
+                block_timestamp,
+            )
+            .await
         }
         Event::Withdraw(event) => {
-            handle_withdraw_event(db, contract_address, tx_hash, chain, event, block_timestamp)
-                .await
+            handle_withdraw_event(
+                db,
+                contract_address,
+                tx_hash,
+                log_index,
+                chain,
+                event,
+                block_timestamp,
+            )
+            .await
         }
         Event::Claim(event) => {
-            handle_claim_event(db, contract_address, tx_hash, chain, event, block_timestamp).await
+            handle_claim_event(
+                db,
+                contract_address,
+                tx_hash,
+                log_index,
+                chain,
+                event,
+                block_timestamp,
+            )
+            .await
         }
     }
 }
