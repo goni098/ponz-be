@@ -44,97 +44,29 @@
   },
   {
     "type": "function",
-    "name": "createWithdrawRequestOnAnotherChain",
+    "name": "collectNative",
     "inputs": [
-      {
-        "name": "_withdrawStrategyMultipleChains",
-        "type": "tuple[]",
-        "internalType": "struct RouterCommonType.WithdrawStrategyMultipleChains[]",
-        "components": [
-          {
-            "name": "withdrawStrategySameChains",
-            "type": "tuple[]",
-            "internalType": "struct RouterCommonType.WithdrawStrategySameChain[]",
-            "components": [
-              {
-                "name": "strategyAddress",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "share",
-                "type": "uint256",
-                "internalType": "uint256"
-              },
-              {
-                "name": "externalCallData",
-                "type": "bytes",
-                "internalType": "bytes"
-              }
-            ]
-          },
-          {
-            "name": "unDistributedWithdraw",
-            "type": "tuple[]",
-            "internalType": "struct RouterCommonType.WithdrawStrategySameChainUndistributed[]",
-            "components": [
-              {
-                "name": "tokenAddress",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "unDistributedAmount",
-                "type": "uint256",
-                "internalType": "uint256"
-              }
-            ]
-          },
-          { "name": "chainId", "type": "uint256", "internalType": "uint256" },
-          { "name": "tokenOut", "type": "address", "internalType": "address" }
-        ]
-      }
+      { "name": "_to", "type": "address", "internalType": "address payable" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "depositFund",
+    "name": "depositFundToStrategyCrossChainFromOperator",
     "inputs": [
       {
-        "name": "_depositParam",
+        "name": "_depositToStrategyCrossChain",
         "type": "tuple",
-        "internalType": "struct RouterCommonType.DepositParam",
+        "internalType": "struct RouterCommonType.DepositToStrategyCrossChain",
         "components": [
           {
-            "name": "tokenAddress",
+            "name": "crossChainDexSender",
             "type": "address",
             "internalType": "address"
           },
           {
-            "name": "receiver",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "amount", "type": "uint256", "internalType": "uint256" }
-        ]
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "depositFundToStrategySameChainFromOperator",
-    "inputs": [
-      {
-        "name": "_depositToStrategy",
-        "type": "tuple",
-        "internalType": "struct RouterCommonType.DepositToStrategySameChain",
-        "components": [
-          {
-            "name": "strategyAddress",
+            "name": "crossChainDexReceiver",
             "type": "address",
             "internalType": "address"
           },
@@ -148,7 +80,31 @@
             "type": "address",
             "internalType": "address"
           },
-          { "name": "amount", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "strategyAddressDestination",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "tokenInForBridge",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "tokenOutForBridge",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "amountIn",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "amountOutMin",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
           {
             "name": "distributionFee",
             "type": "uint256",
@@ -158,11 +114,12 @@
             "name": "externalCallData",
             "type": "bytes",
             "internalType": "bytes"
-          }
+          },
+          { "name": "transportMsg", "type": "bytes", "internalType": "bytes" }
         ]
       },
       {
-        "name": "_swapTokenParam",
+        "name": "_swapTokenInternalParam",
         "type": "tuple",
         "internalType": "struct RouterCommonType.SwapTokenWhenDepositParam",
         "components": [
@@ -186,20 +143,7 @@
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "emergencyWithdrawFund",
-    "inputs": [
-      {
-        "name": "strategyAddress",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -338,12 +282,12 @@
   },
   {
     "type": "function",
-    "name": "rebalanceFundSameChain",
+    "name": "receiveFundCrossChain",
     "inputs": [
       {
-        "name": "_rebalanceParam",
+        "name": "_receiveFundCrossChainPrarm",
         "type": "tuple",
-        "internalType": "struct RouterCommonType.RebalanceStrategySameChain",
+        "internalType": "struct RouterCommonType.ReceiveFundCrossChainParam",
         "components": [
           {
             "name": "strategyAddress",
@@ -351,15 +295,20 @@
             "internalType": "address"
           },
           {
-            "name": "userAddress",
+            "name": "depositor",
             "type": "address",
             "internalType": "address"
           },
-          { "name": "isReferral", "type": "bool", "internalType": "bool" },
           {
-            "name": "rebalancesFee",
-            "type": "uint256",
-            "internalType": "uint256"
+            "name": "depositedTokenAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "amount", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "externalCallData",
+            "type": "bytes",
+            "internalType": "bytes"
           }
         ]
       }
@@ -406,26 +355,48 @@
   },
   {
     "type": "function",
-    "name": "setEmergencyStop",
-    "inputs": [
-      {
-        "name": "strategyAddress",
-        "type": "address",
-        "internalType": "address"
-      },
-      { "name": "isEmergencyStop", "type": "bool", "internalType": "bool" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "supportsInterface",
     "inputs": [
       { "name": "interfaceId", "type": "bytes4", "internalType": "bytes4" }
     ],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "transferFundFromRouterToFundVaultCrossChain",
+    "inputs": [
+      {
+        "name": "_receiveFundCrossChainPrarm",
+        "type": "tuple",
+        "internalType": "struct RouterCommonType.ReceiveFundCrossChainParam",
+        "components": [
+          {
+            "name": "strategyAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositor",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "depositedTokenAddress",
+            "type": "address",
+            "internalType": "address"
+          },
+          { "name": "amount", "type": "uint256", "internalType": "uint256" },
+          {
+            "name": "externalCallData",
+            "type": "bytes",
+            "internalType": "bytes"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -468,107 +439,183 @@
   },
   {
     "type": "function",
+    "name": "withdrawFundAnotherChain",
+    "inputs": [
+      {
+        "name": "withdrawStrategyMultipleChainsV2",
+        "type": "tuple[]",
+        "internalType": "struct RouterCommonType.WithdrawStrategyMultipleChainsV2[]",
+        "components": [
+          {
+            "name": "withdrawStrategySameChains",
+            "type": "tuple[]",
+            "internalType": "struct RouterCommonType.WithdrawStrategySameChain[]",
+            "components": [
+              {
+                "name": "strategyAddress",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "share",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "externalCallData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
+          },
+          {
+            "name": "unDistributedWithdraw",
+            "type": "tuple",
+            "internalType": "struct RouterCommonType.WithdrawStrategySameChainUndistributed",
+            "components": [
+              {
+                "name": "tokenAddress",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "unDistributedAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "swapParam",
+            "type": "tuple",
+            "internalType": "struct RouterCommonType.SwapParam",
+            "components": [
+              {
+                "name": "tokenReceive",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "swapImpl",
+                "type": "address",
+                "internalType": "address"
+              },
+              { "name": "isV3", "type": "bool", "internalType": "bool" }
+            ]
+          },
+          { "name": "tokenIn", "type": "address", "internalType": "address" },
+          {
+            "name": "crossChain",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "nativeValue",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          { "name": "transportMsg", "type": "bytes", "internalType": "bytes" }
+        ]
+      },
+      { "name": "_receiver", "type": "address", "internalType": "address" },
+      { "name": "_isReferral", "type": "bool", "internalType": "bool" },
+      { "name": "_withdrawFee", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "payable"
+  },
+  {
+    "type": "function",
     "name": "withdrawFundSameChain",
     "inputs": [
       {
-        "name": "_withdrawStrategySameChains",
+        "name": "_withdrawSameChainFromOperators",
         "type": "tuple[]",
-        "internalType": "struct RouterCommonType.WithdrawStrategySameChain[]",
+        "internalType": "struct RouterCommonType.WithdrawSameChainFromOperator[]",
         "components": [
           {
-            "name": "strategyAddress",
-            "type": "address",
-            "internalType": "address"
+            "name": "withdrawStrategySameChains",
+            "type": "tuple[]",
+            "internalType": "struct RouterCommonType.WithdrawStrategySameChain[]",
+            "components": [
+              {
+                "name": "strategyAddress",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "share",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "externalCallData",
+                "type": "bytes",
+                "internalType": "bytes"
+              }
+            ]
           },
-          { "name": "share", "type": "uint256", "internalType": "uint256" },
           {
-            "name": "externalCallData",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
+            "name": "unDistributedWithdraw",
+            "type": "tuple",
+            "internalType": "struct RouterCommonType.WithdrawStrategySameChainUndistributed",
+            "components": [
+              {
+                "name": "tokenAddress",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "unDistributedAmount",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "swapParam",
+            "type": "tuple",
+            "internalType": "struct RouterCommonType.SwapParam",
+            "components": [
+              {
+                "name": "tokenReceive",
+                "type": "address",
+                "internalType": "address"
+              },
+              {
+                "name": "swapImpl",
+                "type": "address",
+                "internalType": "address"
+              },
+              { "name": "isV3", "type": "bool", "internalType": "bool" }
+            ]
+          },
+          { "name": "tokenIn", "type": "address", "internalType": "address" }
         ]
       },
-      {
-        "name": "_unDistributedWithdraw",
-        "type": "tuple[]",
-        "internalType": "struct RouterCommonType.WithdrawStrategySameChainUndistributed[]",
-        "components": [
-          {
-            "name": "tokenAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "unDistributedAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      },
+      { "name": "_receiver", "type": "address", "internalType": "address" },
       { "name": "_isReferral", "type": "bool", "internalType": "bool" },
-      { "name": "_signature", "type": "bytes", "internalType": "bytes" },
-      {
-        "name": "swapParam",
-        "type": "tuple",
-        "internalType": "struct RouterCommonType.SwapParam",
-        "components": [
-          {
-            "name": "tokenReceive",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "swapImpl",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "isV3", "type": "bool", "internalType": "bool" }
-        ]
-      }
+      { "name": "_withdrawFee", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "event",
-    "name": "DepositFund",
+    "name": "CollectNativeToken",
     "inputs": [
       {
         "name": "receiver",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
-      },
-      {
-        "name": "tokenAddress",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "depositAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "actualDepositAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "depositedAt",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false
   },
   {
     "type": "event",
-    "name": "DistributeUserFund",
+    "name": "DistributeFundCrossChain",
     "inputs": [
       {
         "name": "strategyAddress",
@@ -822,6 +869,110 @@
   },
   {
     "type": "event",
+    "name": "TransferFundCrossChain",
+    "inputs": [
+      {
+        "name": "depositor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "depositedToken",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenInForBridge",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "tokenOutForBridge",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "crossChainDexSender",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "crossChainDexReceiver",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "strategyDestination",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "actualAmountBridgeCrossChain",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "distributionFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "transportMsg",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "transferFundCrossChainAt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "TransferFundFromRouterToFundVaultCrossChain",
+    "inputs": [
+      {
+        "name": "depositor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "depositedTokenAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Unpaused",
     "inputs": [
       {
@@ -848,7 +999,7 @@
   },
   {
     "type": "event",
-    "name": "WithDrawFundSameChain",
+    "name": "WithDrawFundSameChainFromOperator",
     "inputs": [
       {
         "name": "receiver",
@@ -897,65 +1048,126 @@
   },
   {
     "type": "event",
-    "name": "WithdrawRequest",
+    "name": "WithdrawFundAnotherChain",
     "inputs": [
       {
-        "name": "user",
+        "name": "token",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "chainId",
-        "type": "uint256",
+        "name": "receiver",
+        "type": "address",
         "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "withdrawStrategySameChains",
-        "type": "tuple[]",
+        "name": "transportMsg",
+        "type": "bytes",
         "indexed": false,
-        "internalType": "struct RouterCommonType.WithdrawStrategySameChain[]",
-        "components": [
-          {
-            "name": "strategyAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          { "name": "share", "type": "uint256", "internalType": "uint256" },
-          {
-            "name": "externalCallData",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
+        "internalType": "bytes"
       },
       {
-        "name": "unDistributedWithdraw",
-        "type": "tuple[]",
+        "name": "timestamp",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "struct RouterCommonType.WithdrawStrategySameChainUndistributed[]",
-        "components": [
-          {
-            "name": "tokenAddress",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "unDistributedAmount",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WithdrawFundAnotherChainExecuted",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "operator",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "bridgeCrossChain",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "isReferral",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "crosschainFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "transportMsg",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "WithdrawFundCrossChainFromOperator",
+    "inputs": [
+      {
+        "name": "receiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       },
       {
         "name": "tokenOut",
         "type": "address",
-        "indexed": false,
+        "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "requestedAt",
+        "name": "transportMsg",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
+      },
+      {
+        "name": "totalAmountOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "withdrawFee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "withdrawAt",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1003,6 +1215,7 @@
   { "type": "error", "name": "InvalidDexCrossChainInternal", "inputs": [] },
   { "type": "error", "name": "InvalidDexSwapExternalChain", "inputs": [] },
   { "type": "error", "name": "InvalidDexSwapInternalChain", "inputs": [] },
+  { "type": "error", "name": "InvalidFee", "inputs": [] },
   { "type": "error", "name": "InvalidInitialization", "inputs": [] },
   { "type": "error", "name": "InvalidRebalanceAmount", "inputs": [] },
   { "type": "error", "name": "InvalidShare", "inputs": [] },
@@ -1017,6 +1230,11 @@
   {
     "type": "error",
     "name": "InvalidTypeDexCrossChainSenderReceiver",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidUnderlyingAssetExternalStrategy",
     "inputs": []
   },
   { "type": "error", "name": "NotInitializing", "inputs": [] },

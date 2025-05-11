@@ -1,0 +1,818 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "moneyfiRouter_",
+        "type": "address"
+      },
+      { "internalType": "address", "name": "admin_", "type": "address" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "value", "type": "uint256" },
+      { "internalType": "uint256", "name": "exptected", "type": "uint256" }
+    ],
+    "name": "InsufficientValue",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "addr", "type": "address" }
+    ],
+    "name": "InvalidAddress",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidAdminRole", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "InvalidAmount",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidAtLeastOperatorRole", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" }
+    ],
+    "name": "InvalidChainId",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidDelegateRole", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint16", "name": "optionType", "type": "uint16" }
+    ],
+    "name": "InvalidOptionType",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "sender", "type": "address" }
+    ],
+    "name": "InvalidSender",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidSignerRole", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "slippage", "type": "uint256" }
+    ],
+    "name": "InvalidSlippage",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "pool", "type": "address" }
+    ],
+    "name": "InvalidStargatePool",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "amount", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "targetMinAmount",
+        "type": "uint256"
+      },
+      { "internalType": "uint256", "name": "expectedAmount", "type": "uint256" }
+    ],
+    "name": "InvalidTargetChainAmount",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "InvalidTokenAddress",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint8", "name": "bits", "type": "uint8" },
+      { "internalType": "uint256", "name": "value", "type": "uint256" }
+    ],
+    "name": "SafeCastOverflowedUintDowncast",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "token", "type": "address" }
+    ],
+    "name": "TokenNotSupportBridgeToTargetChain",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "_guid",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "_message",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "_executor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "_extraData",
+        "type": "bytes"
+      }
+    ],
+    "name": "LzCompose",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "router",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "message",
+        "type": "bytes"
+      }
+    ],
+    "name": "ReceiveFundCrossChainFailed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint32",
+        "name": "_dstChainId",
+        "type": "uint32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "_amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "_receiver",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "_composeMsg",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint128",
+        "name": "_composeGasLimit",
+        "type": "uint128"
+      }
+    ],
+    "name": "TakeTransport",
+    "type": "event"
+  },
+  { "stateMutability": "payable", "type": "fallback" },
+  {
+    "inputs": [],
+    "name": "ADMIN_DELEGATE_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ONE_HUNDRED_PERCENT",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "OPERATOR",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "SIGNER",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "controller",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes", "name": "compose", "type": "bytes" }],
+    "name": "decodeComposeParams",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "strategyAddress",
+            "type": "address"
+          },
+          { "internalType": "address", "name": "depositor", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "depositedTokenAddress",
+            "type": "address"
+          },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          {
+            "internalType": "bytes",
+            "name": "externalCallData",
+            "type": "bytes"
+          }
+        ],
+        "internalType": "struct RouterCommonType.ReceiveFundCrossChainParam",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes", "name": "transport", "type": "bytes" }
+    ],
+    "name": "decodeTransportParams",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "token", "type": "address" },
+          { "internalType": "uint32", "name": "dstChainId", "type": "uint32" },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          { "internalType": "address", "name": "receiver", "type": "address" },
+          { "internalType": "bytes", "name": "composeMsg", "type": "bytes" },
+          {
+            "internalType": "uint128",
+            "name": "composeGasLimit",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct DexCrossChainType.TransportParams",
+        "name": "params",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_strategyAddress",
+        "type": "address"
+      },
+      { "internalType": "address", "name": "_depositor", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_depositedTokenAddress",
+        "type": "address"
+      },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" },
+      { "internalType": "bytes", "name": "_externalCallData", "type": "bytes" }
+    ],
+    "name": "endcodeComposeMsg",
+    "outputs": [
+      { "internalType": "bytes", "name": "composeMsg", "type": "bytes" }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "uint256", "name": "index", "type": "uint256" }
+    ],
+    "name": "getRoleMember",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+    ],
+    "name": "getRoleMemberCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+    ],
+    "name": "getRoleMembers",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getSlippage",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_chainId", "type": "uint256" }
+    ],
+    "name": "getStargateEndpointId",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_chainId", "type": "uint256" }
+    ],
+    "name": "getSupportedBridgeTokenByChainId",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "address", "name": "token", "type": "address" },
+          { "internalType": "string", "name": "name", "type": "string" },
+          { "internalType": "string", "name": "symbol", "type": "string" },
+          { "internalType": "uint8", "name": "decimals", "type": "uint8" },
+          { "internalType": "address", "name": "poolToken", "type": "address" }
+        ],
+        "internalType": "struct DexCrossChainType.BridgeCrossChainStargateSupportToken[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "hasRole",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_sender", "type": "address" }
+    ],
+    "name": "isAdmin",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_sender", "type": "address" }
+    ],
+    "name": "isDelegateAdmin",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_sender", "type": "address" }
+    ],
+    "name": "isOperator",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_sender", "type": "address" }
+    ],
+    "name": "isSigner",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_from", "type": "address" },
+      { "internalType": "bytes32", "name": "_guid", "type": "bytes32" },
+      { "internalType": "bytes", "name": "_message", "type": "bytes" },
+      { "internalType": "address", "name": "_executor", "type": "address" },
+      { "internalType": "bytes", "name": "_extraData", "type": "bytes" }
+    ],
+    "name": "lzCompose",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" },
+      { "internalType": "uint32", "name": "_dstChainId", "type": "uint32" },
+      { "internalType": "address", "name": "_receiver", "type": "address" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" },
+      { "internalType": "uint256", "name": "_amountOutMin", "type": "uint256" },
+      { "internalType": "bytes", "name": "_composeMsg", "type": "bytes" },
+      {
+        "internalType": "uint128",
+        "name": "_composeGasLimit",
+        "type": "uint128"
+      }
+    ],
+    "name": "prepareForTransport",
+    "outputs": [
+      { "internalType": "uint256", "name": "valueToSend", "type": "uint256" },
+      {
+        "components": [
+          { "internalType": "uint32", "name": "dstEid", "type": "uint32" },
+          { "internalType": "bytes32", "name": "to", "type": "bytes32" },
+          { "internalType": "uint256", "name": "amountLD", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "minAmountLD",
+            "type": "uint256"
+          },
+          { "internalType": "bytes", "name": "extraOptions", "type": "bytes" },
+          { "internalType": "bytes", "name": "composeMsg", "type": "bytes" },
+          { "internalType": "bytes", "name": "oftCmd", "type": "bytes" }
+        ],
+        "internalType": "struct SendParam",
+        "name": "sendParam",
+        "type": "tuple"
+      },
+      {
+        "components": [
+          { "internalType": "uint256", "name": "nativeFee", "type": "uint256" },
+          { "internalType": "uint256", "name": "lzTokenFee", "type": "uint256" }
+        ],
+        "internalType": "struct MessagingFee",
+        "name": "messagingFee",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint32", "name": "_dstChainId", "type": "uint32" },
+      {
+        "internalType": "uint128",
+        "name": "_composeGasLimit",
+        "type": "uint128"
+      }
+    ],
+    "name": "prepareTransportMsg",
+    "outputs": [
+      { "internalType": "bytes", "name": "transpostMsg", "type": "bytes" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "router",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_router", "type": "address" }
+    ],
+    "name": "setRouter",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_slippage", "type": "uint256" }
+    ],
+    "name": "setSlippage",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_chainId", "type": "uint256" },
+      {
+        "internalType": "uint256",
+        "name": "_stargateEndpointID",
+        "type": "uint256"
+      }
+    ],
+    "name": "setStargateEndpointId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "_stargatePoolToken",
+        "type": "address"
+      }
+    ],
+    "name": "setStargatePoolToken",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
+    ],
+    "name": "supportsInterface",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "tokenInForBridge",
+            "type": "address"
+          },
+          { "internalType": "address", "name": "receiver", "type": "address" },
+          {
+            "internalType": "address",
+            "name": "strategyDestination",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "tokenOutForBridge",
+            "type": "address"
+          },
+          { "internalType": "address", "name": "depositor", "type": "address" },
+          { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "amountOutMin",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "externalCallData",
+            "type": "bytes"
+          },
+          { "internalType": "bytes", "name": "transportMsg", "type": "bytes" }
+        ],
+        "internalType": "struct DexCrossChainType.DepositCrossChainParam",
+        "name": "_depositParam",
+        "type": "tuple"
+      }
+    ],
+    "name": "takeTransportDeposit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "tokenInForBridge",
+            "type": "address"
+          },
+          { "internalType": "address", "name": "receiver", "type": "address" },
+          { "internalType": "uint256", "name": "amountIn", "type": "uint256" },
+          {
+            "internalType": "uint256",
+            "name": "amountOutMin",
+            "type": "uint256"
+          },
+          { "internalType": "bytes", "name": "transportMsg", "type": "bytes" }
+        ],
+        "internalType": "struct DexCrossChainType.WithdrawCrossChainParam",
+        "name": "_withdrawParam",
+        "type": "tuple"
+      }
+    ],
+    "name": "takeTransportWithdraw",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_token", "type": "address" },
+      { "internalType": "address", "name": "_to", "type": "address" },
+      { "internalType": "uint256", "name": "_amount", "type": "uint256" }
+    ],
+    "name": "withdrawal",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  { "stateMutability": "payable", "type": "receive" }
+]

@@ -1,8 +1,8 @@
 use alloy::primitives::{Address, TxHash};
 use alloy_chains::NamedChain;
 use sea_orm::{
-    ActiveValue::Set, ColumnTrait, Condition, DatabaseConnection, DatabaseTransaction, DbErr,
-    EntityTrait, QueryFilter, QuerySelect, prelude::DateTimeWithTimeZone,
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
+    QueryFilter, prelude::DateTimeWithTimeZone, sea_query::OnConflict,
 };
 use serde_json::Value;
 
@@ -18,30 +18,8 @@ pub async fn find_by_tx_hash(
         .await
 }
 
-pub async fn find_existed(
-    db: &DatabaseConnection,
-    list: &[(TxHash, u64)],
-) -> Result<Vec<(String, u64)>, DbErr> {
-    let mut filter = Condition::any();
-
-    for (tx_hash, log_index) in list {
-        filter = filter
-            .add(contract_event::Column::TxHash.eq(tx_hash.to_string()))
-            .add(contract_event::Column::LogIndex.eq(*log_index));
-    }
-
-    contract_event::Entity::find()
-        .select_only()
-        .column(contract_event::Column::TxHash)
-        .column(contract_event::Column::LogIndex)
-        .filter(filter)
-        .into_tuple()
-        .all(db)
-        .await
-}
-
 #[allow(clippy::too_many_arguments)]
-pub async fn create(
+pub async fn upsert(
     db_tx: &DatabaseTransaction,
     name: ContractEventName,
     contract_address: Address,
@@ -62,7 +40,23 @@ pub async fn create(
         log_index: Set(log_index),
     };
 
-    contract_event::Entity::insert(event).exec(db_tx).await?;
+    contract_event::Entity::insert(event)
+        .on_conflict(
+            OnConflict::columns([
+                contract_event::Column::TxHash,
+                contract_event::Column::LogIndex,
+            ])
+            .update_columns([
+                contract_event::Column::ContractAddress,
+                contract_event::Column::Args,
+                contract_event::Column::ChainId,
+                contract_event::Column::CreatedAt,
+                contract_event::Column::Name,
+            ])
+            .to_owned(),
+        )
+        .exec(db_tx)
+        .await?;
 
     Ok(())
 }

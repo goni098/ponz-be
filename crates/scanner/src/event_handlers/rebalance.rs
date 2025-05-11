@@ -31,7 +31,7 @@ pub async fn handle_rebalance_event(
 
     let db_tx = db.begin().await?;
 
-    repositories::contract_event::create(
+    repositories::contract_event::upsert(
         &db_tx,
         ContractEventName::Rebalance,
         contract_address,

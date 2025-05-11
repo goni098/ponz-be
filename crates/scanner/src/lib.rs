@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use alloy::{
     eips::BlockNumberOrTag,
-    primitives::{Address, TxHash},
+    primitives::Address,
     providers::Provider,
-    rpc::types::{Filter, FilterBlockOption, Log},
+    rpc::types::{Filter, FilterBlockOption},
     sol_types::{SolEvent, SolEventInterface},
 };
 use alloy_chains::NamedChain;
@@ -20,10 +20,16 @@ use tokio::time::sleep;
 use web3::{
     client::{PublicClient, public_client},
     contracts::{
-        referral::Refferal::{Claim, RefferalEvents},
-        router::Router::{
-            DepositFund, DistributeUserFund, RebalanceFundSameChain, RouterEvents,
-            WithDrawFundSameChain,
+        referral::{
+            Refferal::{Claim, RefferalEvents},
+            RefferalContract,
+        },
+        router::{
+            Router::{
+                DepositFund, DistributeUserFund, RebalanceFundSameChain, RouterEvents,
+                WithDrawFundSameChain,
+            },
+            RouterContract,
         },
     },
 };
@@ -40,8 +46,8 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
 
     let client = public_client(chain);
 
-    let router_address = web3::get_router_contract_address(chain);
-    let referral_address = web3::get_referral_address(chain);
+    let router_address = RouterContract::address_by_chain(chain);
+    let referral_address = RefferalContract::address_by_chain(chain);
 
     let current_scanned_block = {
         let scanned_block = repositories::setting::find(&db, Setting::ScannedBlock(chain)).await?;
@@ -118,25 +124,6 @@ async fn scan(
 
     let logs = client.get_logs(filter).await?;
 
-    let tx_hash_and_log_index_list: Vec<(TxHash, u64)> = logs
-        .iter()
-        .filter_map(|log| log.transaction_hash.zip(log.log_index))
-        .collect();
-
-    let resolved_list =
-        repositories::contract_event::find_existed(db, &tx_hash_and_log_index_list).await?;
-
-    let logs: Vec<Log> = logs
-        .into_iter()
-        .filter(|log| {
-            log.transaction_hash
-                .as_ref()
-                .map(ToString::to_string)
-                .zip(log.log_index)
-                .is_some_and(|tx_hash_and_log_index| resolved_list.contains(&tx_hash_and_log_index))
-        })
-        .collect();
-
     let mut tasks = Vec::with_capacity(logs.len());
 
     for log in logs {
@@ -144,8 +131,8 @@ async fn scan(
             .block_timestamp
             .unwrap_or_else(|| Utc::now().timestamp() as u64);
 
-        let tx_hash = log.transaction_hash.expect("exclude none above");
-        let log_index = log.log_index.expect("exclude above") as i32;
+        let tx_hash = log.transaction_hash.unwrap_or_default();
+        let log_index = log.log_index.map(|index| index as i32).unwrap_or(-1);
 
         let contract_address = log.address();
 

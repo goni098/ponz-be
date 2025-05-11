@@ -18,24 +18,16 @@ pub async fn handle_deposit_event(
     event: DepositFund,
     block_timestamp: u64,
 ) -> AppResult<()> {
-    let args = serde_json::json!({
-        "receiver": event.receiver.to_string(),
-        "tokenAddress": event.tokenAddress.to_string(),
-        "depositAmount": event.depositAmount.to_string(),
-        "actualDepositAmount": event.actualDepositAmount.to_string(),
-        "depositedAt": event.depositedAt.to_string(),
-    });
-
     let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
         .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
     let db_tx = db.begin().await?;
 
-    repositories::contract_event::create(
+    repositories::contract_event::upsert(
         &db_tx,
         ContractEventName::Deposit,
         contract_address,
-        args,
+        event.as_json(),
         chain,
         tx_hash,
         log_index,

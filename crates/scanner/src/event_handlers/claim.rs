@@ -29,7 +29,7 @@ pub async fn handle_claim_event(
 
     let db_tx = db.begin().await?;
 
-    repositories::contract_event::create(
+    repositories::contract_event::upsert(
         &db_tx,
         ContractEventName::Claim,
         contract_address,
