@@ -6,7 +6,7 @@ use sea_orm::{
 };
 use serde_json::Value;
 
-use crate::{entities::contract_event, enums::ContractEventName};
+use crate::entities::contract_event;
 
 pub async fn find_by_tx_hash(
     db: &DatabaseConnection,
@@ -21,12 +21,12 @@ pub async fn find_by_tx_hash(
 #[allow(clippy::too_many_arguments)]
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
-    name: ContractEventName,
+    signature: &'static str,
     contract_address: Address,
     args: Value,
     chain: NamedChain,
     tx_hash: TxHash,
-    log_index: i32,
+    log_index: u64,
     created_at: DateTimeWithTimeZone,
 ) -> Result<(), DbErr> {
     let event = contract_event::ActiveModel {
@@ -35,9 +35,9 @@ pub async fn upsert(
         chain_id: Set(chain as i64),
         created_at: Set(created_at),
         id: Default::default(),
-        name: Set(name),
+        signature: Set(signature.to_string()),
         tx_hash: Set(tx_hash.to_string()),
-        log_index: Set(log_index),
+        log_index: Set(log_index as i64),
     };
 
     contract_event::Entity::insert(event)
@@ -51,7 +51,7 @@ pub async fn upsert(
                 contract_event::Column::Args,
                 contract_event::Column::ChainId,
                 contract_event::Column::CreatedAt,
-                contract_event::Column::Name,
+                contract_event::Column::Signature,
             ])
             .to_owned(),
         )

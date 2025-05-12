@@ -1,10 +1,12 @@
 use std::time::Duration;
 
 use alloy::{
+    consensus::BlockHeader,
     eips::BlockNumberOrTag,
     primitives::Address,
     providers::Provider,
     rpc::types::{Filter, FilterBlockOption},
+    signers::k256::elliptic_curve::pkcs8::der::DateTime,
     sol_types::{SolEvent, SolEventInterface},
 };
 use alloy_chains::NamedChain;
@@ -15,25 +17,25 @@ use database::{
 };
 use event_handlers::{Event, handler};
 use futures_util::future::try_join_all;
-use shared::{AppResult, env::ENV};
+use shared::{AppError, AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
-    client::{PublicClient, public_client},
+    DynChain,
+    client::PublicClient,
     contracts::{
-        referral::{
-            Refferal::{Claim, RefferalEvents},
-            RefferalContract,
+        cross_chain_router::CrossChainRouter::{
+            DistributeFundCrossChain, TransferFundCrossChain,
+            TransferFundFromRouterToFundVaultCrossChain,
         },
-        router::{
-            Router::{
-                DepositFund, DistributeUserFund, RebalanceFundSameChain, RouterEvents,
-                WithDrawFundSameChain,
-            },
-            RouterContract,
+        referral::Refferal::{Claim, RefferalEvents},
+        router::Router::{
+            DepositFund, DistributeUserFund, RebalanceFundSameChain, RouterEvents,
+            WithDrawFundSameChain,
         },
     },
 };
 
+pub mod decode_log;
 mod event_handlers;
 
 const MAX_RANGE: u64 = 10_000;
@@ -44,10 +46,11 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
 
-    let client = public_client(chain);
+    let client = chain.public_client();
 
-    let router_address = RouterContract::address_by_chain(chain);
-    let referral_address = RefferalContract::address_by_chain(chain);
+    let router_address = chain.router_contract_address();
+    let referral_address = chain.refferal_contract_address();
+    let cross_chain_router_address = chain.cross_chain_router_contract_address();
 
     let current_scanned_block = {
         let scanned_block = repositories::setting::find(&db, Setting::ScannedBlock(chain)).await?;
@@ -60,13 +63,20 @@ pub async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     };
 
     let mut filter = Filter::new()
-        .address(vec![router_address, referral_address])
+        .address(vec![
+            router_address,
+            referral_address,
+            cross_chain_router_address,
+        ])
         .events([
             DepositFund::SIGNATURE,
             DistributeUserFund::SIGNATURE,
             RebalanceFundSameChain::SIGNATURE,
             WithDrawFundSameChain::SIGNATURE,
             Claim::SIGNATURE,
+            DistributeFundCrossChain::SIGNATURE,
+            TransferFundCrossChain::SIGNATURE,
+            TransferFundFromRouterToFundVaultCrossChain::SIGNATURE,
         ])
         .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
@@ -127,80 +137,26 @@ async fn scan(
     let mut tasks = Vec::with_capacity(logs.len());
 
     for log in logs {
-        let block_timestamp = log
-            .block_timestamp
-            .unwrap_or_else(|| Utc::now().timestamp() as u64);
+        let created_at = if let Some(timestamp) = log.block_timestamp {
+            DateTime::from_timestamp(timestamp as i64, 0)
+                .ok_or(AppError::Custom("Invalid block_timestamp".into()))?
+        } else {
+            let block_hash = log
+                .block_hash
+                .ok_or(AppError::Custom("Log missing block hash".into()))?;
 
-        let tx_hash = log.transaction_hash.unwrap_or_default();
-        let log_index = log.log_index.map(|index| index as i32).unwrap_or(-1);
+            let block = client
+                .get_block_by_hash(block_hash)
+                .await?
+                .ok_or(AppError::Custom(
+                    format!("Not found block by block_hash {}", block_hash).into(),
+                ))?;
 
-        let contract_address = log.address();
+            DateTime::from_timestamp(block.header.timestamp() as i64, 0)
+                .ok_or(AppError::Custom("Invalid header block_timestamp".into()))?
+        };
 
-        if contract_address == router_address {
-            let decoded_log = RouterEvents::decode_log(&log.inner)?;
-
-            match decoded_log.data {
-                RouterEvents::DepositFund(event) => {
-                    tasks.push(handler(
-                        db,
-                        contract_address,
-                        tx_hash,
-                        log_index,
-                        chain,
-                        Event::Deposit(event),
-                        block_timestamp,
-                    ));
-                }
-                RouterEvents::DistributeUserFund(event) => {
-                    tasks.push(handler(
-                        db,
-                        contract_address,
-                        tx_hash,
-                        log_index,
-                        chain,
-                        Event::Distribute(event),
-                        block_timestamp,
-                    ));
-                }
-                RouterEvents::RebalanceFundSameChain(event) => {
-                    tasks.push(handler(
-                        db,
-                        contract_address,
-                        tx_hash,
-                        log_index,
-                        chain,
-                        Event::Rebalance(event),
-                        block_timestamp,
-                    ));
-                }
-                RouterEvents::WithDrawFundSameChain(event) => {
-                    tasks.push(handler(
-                        db,
-                        contract_address,
-                        tx_hash,
-                        log_index,
-                        chain,
-                        Event::Withdraw(event),
-                        block_timestamp,
-                    ));
-                }
-                _ => {}
-            }
-        } else if contract_address == referral_address {
-            let decoded_log = RefferalEvents::decode_log(&log.inner)?;
-
-            if let RefferalEvents::Claim(event) = decoded_log.data {
-                tasks.push(handler(
-                    db,
-                    contract_address,
-                    tx_hash,
-                    log_index,
-                    chain,
-                    Event::Claim(event),
-                    block_timestamp,
-                ));
-            }
-        }
+        tasks.push(handler(db, chain, event, created_at));
     }
 
     try_join_all(tasks).await?;

@@ -10,3 +10,5 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 alloy = { workspace = true }
 chrono = { workspace = true }
+
+web3 = { path = "../web3" }

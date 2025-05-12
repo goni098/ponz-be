@@ -15,6 +15,8 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub actual_deposit_amount: Decimal,
     pub is_distributed: bool,
+    pub log_index: i64,
+    pub tx_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

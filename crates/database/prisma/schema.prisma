@@ -15,8 +15,23 @@ model renew_token {
   token   String @db.VarChar
 }
 
+model claim_txn {
+  id         BigInt   @id @default(autoincrement())
+  tx_hash    String   @db.VarChar
+  log_index  BigInt
+  created_at DateTime @db.Timestamptz(3)
+  chain_id   BigInt
+  amount     Decimal  @db.Decimal(90, 0)
+  from       String   @db.VarChar(42)
+  to         String   @db.VarChar(42)
+
+  @@unique([tx_hash, log_index])
+}
+
 model deposit_txn {
   id                    BigInt   @id @default(autoincrement())
+  tx_hash               String   @db.VarChar
+  log_index             BigInt
   created_at            DateTime @db.Timestamptz(3)
   chain_id              BigInt
   receiver              String   @db.VarChar(42)
@@ -24,42 +39,34 @@ model deposit_txn {
   deposit_amount        Decimal  @db.Decimal(90, 0)
   actual_deposit_amount Decimal  @db.Decimal(90, 0)
   is_distributed        Boolean
-}
 
-model withdraw_txn {
-  id               BigInt   @id @default(autoincrement())
-  created_at       DateTime @db.Timestamptz(3)
-  chain_id         BigInt
-  receiver         String   @db.VarChar(42)
-  user             String   @db.VarChar(42)
-  strategy_address String   @db.VarChar(42)
-  token_address    String   @db.VarChar(42)
-  share            Decimal  @db.Decimal(90, 0)
+  @@unique([tx_hash, log_index])
 }
 
 model distribute_txn {
   id                      BigInt   @id @default(autoincrement())
+  tx_hash                 String   @db.VarChar
+  log_index               BigInt
   created_at              DateTime @db.Timestamptz(3)
   chain_id                BigInt
   strategy_address        String   @db.VarChar(42)
   depositor               String   @db.VarChar(42)
   deposited_token_address String   @db.VarChar(42)
-  amount                  Decimal  @db.Decimal(90, 0)
+  underlying_asset        String   @db.VarChar(42)
   swap_contract           String   @db.VarChar(42)
+  amount                  Decimal  @db.Decimal(90, 0)
+  actual_amount_out       Decimal  @db.Decimal(90, 0)
+  strategy_share          Decimal  @db.Decimal(90, 0)
+  distributed_fee         Decimal  @db.Decimal(90, 0)
   is_rebalanced           Boolean
-}
 
-model claim_txn {
-  id         BigInt   @id @default(autoincrement())
-  created_at DateTime @db.Timestamptz(3)
-  chain_id   BigInt
-  amount     Decimal  @db.Decimal(90, 0)
-  from       String   @db.VarChar(42)
-  to         String   @db.VarChar(42)
+  @@unique([tx_hash, log_index])
 }
 
 model rebalance_txn {
   id               BigInt   @id @default(autoincrement())
+  tx_hash          String   @db.VarChar
+  log_index        BigInt
   created_at       DateTime @db.Timestamptz(3)
   chain_id         BigInt
   strategy_address String   @db.VarChar(42)
@@ -67,31 +74,57 @@ model rebalance_txn {
   underlying_asset String   @db.VarChar(42)
   received_amount  Decimal  @db.Decimal(90, 0)
   received_reward  Decimal  @db.Decimal(90, 0)
+  protocol_fee     Decimal  @db.Decimal(90, 0)
+  referral_fee     Decimal  @db.Decimal(90, 0)
+  rebalance_fee    Decimal  @db.Decimal(90, 0)
+
+  @@unique([tx_hash, log_index])
+}
+
+model withdraw_txn {
+  id                     BigInt   @id @default(autoincrement())
+  tx_hash                String   @db.VarChar
+  log_index              BigInt
+  created_at             DateTime @db.Timestamptz(3)
+  chain_id               BigInt
+  receiver               String   @db.VarChar(42)
+  user                   String   @db.VarChar(42)
+  strategy_address       String   @db.VarChar(42)
+  token_address          String   @db.VarChar(42)
+  share                  Decimal  @db.Decimal(90, 0)
+  actual_withdraw_amount Decimal  @db.Decimal(90, 0)
+
+  @@unique([tx_hash, log_index])
 }
 
 model contract_event {
-  id               BigInt              @id @default(autoincrement())
-  created_at       DateTime            @db.Timestamptz(3)
+  id               BigInt   @id @default(autoincrement())
+  created_at       DateTime @db.Timestamptz(3)
   chain_id         BigInt
-  contract_address String              @db.VarChar
-  tx_hash          String              @db.VarChar
+  contract_address String   @db.VarChar
+  tx_hash          String   @db.VarChar
   log_index        Int
-  name             contract_event_name
+  signature        String   @db.VarChar
   args             Json
 
   @@unique([tx_hash, log_index])
   @@index([tx_hash, log_index])
 }
 
+model pool {
+  id               BigInt  @id @default(autoincrement())
+  name             String  @db.VarChar
+  platform         String  @db.VarChar
+  chain_id         BigInt
+  address          String  @db.VarChar(42)
+  strategy_address String  @db.VarChar(42)
+  tvl              Int
+  apr              Int
+  swap_contract    String  @db.VarChar(42)
+  enable           Boolean
+}
+
 model setting {
   key   String @id @db.VarChar
   value String @db.VarChar
-}
-
-enum contract_event_name {
-  deposit
-  withdraw
-  distribute
-  claim
-  rebalance
 }

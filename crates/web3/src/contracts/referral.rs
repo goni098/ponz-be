@@ -1,10 +1,6 @@
-use alloy::{primitives::Address, sol};
-use alloy_chains::NamedChain;
+use alloy::sol;
 
-use crate::{
-    addresses::{base::BASE_REFERRAL_CONTRACT_ADDRESS, sepolia::SEPOLIA_REFERRAL_CONTRACT_ADDRESS},
-    client::PublicClient,
-};
+use crate::{EventArgs, client::PublicClient};
 
 sol!(
     #[allow(missing_docs)]
@@ -16,12 +12,13 @@ sol!(
 
 pub type RefferalContract = Refferal::RefferalInstance<PublicClient>;
 
-impl RefferalContract {
-    pub fn address_by_chain(chain: NamedChain) -> Address {
-        match chain {
-            NamedChain::Base => BASE_REFERRAL_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_REFERRAL_CONTRACT_ADDRESS,
-            _ => panic!("RefferalContract unsupported chain {}", chain),
-        }
+impl EventArgs for Refferal::Claim {
+    fn json_args(&self) -> serde_json::Value {
+        serde_json::json!({
+            "amount": self.amount.to_string(),
+            "from": self.from.to_string(),
+            "to": self.to.to_string(),
+            "claimAt:":self.claimAt.to_string()
+        })
     }
 }

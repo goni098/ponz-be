@@ -7,25 +7,17 @@ use database::{
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
-use web3::contracts::router::Router::RebalanceFundSameChain;
+use web3::{EventArgs, contracts::router::Router::RebalanceFundSameChain};
 
 pub async fn handle_rebalance_event(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
-    log_index: i32,
+    log_index: u64,
     chain: NamedChain,
     event: RebalanceFundSameChain,
     block_timestamp: u64,
 ) -> AppResult<()> {
-    let args = serde_json::json!({
-        "strategyAddress": event.strategyAddress.to_string(),
-        "userAddress": event.userAddress.to_string(),
-        "underlyingAsset": event.underlyingAsset.to_string(),
-        "receivedAmount": event.receivedAmount.to_string(),
-        "receivedReward": event.receivedReward.to_string(),
-    });
-
     let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
         .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
@@ -35,7 +27,7 @@ pub async fn handle_rebalance_event(
         &db_tx,
         ContractEventName::Rebalance,
         contract_address,
-        args,
+        event.json_args(),
         chain,
         tx_hash,
         log_index,
@@ -43,17 +35,7 @@ pub async fn handle_rebalance_event(
     )
     .await?;
 
-    repositories::rebalance_txn::create(
-        &db_tx,
-        chain,
-        event.strategyAddress,
-        event.userAddress,
-        event.underlyingAsset,
-        event.receivedAmount,
-        event.receivedReward,
-        created_at.into(),
-    )
-    .await?;
+    repositories::rebalance_txn::upsert(&db_tx, chain, tx_hash, log_index, event).await?;
 
     db_tx.commit().await?;
 

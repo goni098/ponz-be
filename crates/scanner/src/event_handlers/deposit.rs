@@ -7,13 +7,13 @@ use database::{
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
-use web3::contracts::router::Router::DepositFund;
+use web3::{EventArgs, contracts::router::Router::DepositFund};
 
 pub async fn handle_deposit_event(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
-    log_index: i32,
+    log_index: u64,
     chain: NamedChain,
     event: DepositFund,
     block_timestamp: u64,
@@ -27,7 +27,7 @@ pub async fn handle_deposit_event(
         &db_tx,
         ContractEventName::Deposit,
         contract_address,
-        event.as_json(),
+        event.json_args(),
         chain,
         tx_hash,
         log_index,
@@ -35,16 +35,7 @@ pub async fn handle_deposit_event(
     )
     .await?;
 
-    repositories::deposit_txn::create(
-        &db_tx,
-        chain,
-        event.receiver,
-        event.tokenAddress,
-        event.depositAmount,
-        event.actualDepositAmount,
-        created_at.into(),
-    )
-    .await?;
+    repositories::deposit_txn::create(&db_tx, chain, tx_hash, log_index, event).await?;
 
     db_tx.commit().await?;
 

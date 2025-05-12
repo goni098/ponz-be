@@ -1,5 +1,4 @@
-use alloy::{primitives::Address, sol};
-use alloy_chains::NamedChain;
+use alloy::sol;
 
 use crate::client::PublicClient;
 
@@ -12,9 +11,3 @@ sol!(
 );
 
 pub type StrategyContract = Strategy::StrategyInstance<PublicClient>;
-
-impl StrategyContract {
-    pub fn address_by_chain(_chain: NamedChain) -> Address {
-        Address::ZERO
-    }
-}

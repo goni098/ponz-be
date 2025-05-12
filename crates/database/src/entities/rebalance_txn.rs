@@ -15,6 +15,14 @@ pub struct Model {
     pub received_amount: Decimal,
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub received_reward: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub protocol_fee: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub rebalance_fee: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub referral_fee: Decimal,
+    pub log_index: i64,
+    pub tx_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

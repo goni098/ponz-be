@@ -12,6 +12,8 @@ pub struct Model {
     pub amount: Decimal,
     pub from: String,
     pub to: String,
+    pub log_index: i64,
+    pub tx_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -1,31 +1,29 @@
-use alloy::primitives::{Address, TxHash};
+use alloy::{
+    primitives::{Address, TxHash},
+    rpc::types::Log,
+};
 use alloy_chains::NamedChain;
 use chrono::DateTime;
 use database::{
-    enums::ContractEventName,
     repositories,
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
-use web3::contracts::referral::Refferal::Claim;
+use web3::{EventArgs, contracts::referral::Refferal::Claim};
 
 pub async fn handle_claim_event(
     db: &DatabaseConnection,
-    contract_address: Address,
-    tx_hash: TxHash,
-    log_index: i32,
     chain: NamedChain,
-    event: Claim,
-    block_timestamp: u64,
+    log: Log<Claim>,
 ) -> AppResult<()> {
-    let args = serde_json::json!({
-        "amount": event.amount.to_string(),
-        "from": event.from.to_string(),
-        "to": event.to.to_string(),
-    });
+    let block_timestamp = log.block_timestamp.unwrap_or_default();
 
-    let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
+    let created_at = if let Some(timestamp) = log.block_timestamp {
+         DateTime::from_timestamp(timestamp as i64, 0)
         .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
+    } else {
+        
+    };
 
     let db_tx = db.begin().await?;
 
@@ -33,7 +31,7 @@ pub async fn handle_claim_event(
         &db_tx,
         ContractEventName::Claim,
         contract_address,
-        args,
+        event.json_args(),
         chain,
         tx_hash,
         log_index,
@@ -41,15 +39,7 @@ pub async fn handle_claim_event(
     )
     .await?;
 
-    repositories::claim_txn::create(
-        &db_tx,
-        chain,
-        event.amount,
-        event.from,
-        event.to,
-        created_at.into(),
-    )
-    .await?;
+    repositories::claim_txn::upsert(&db_tx, chain, tx_hash, log_index, event).await?;
 
     db_tx.commit().await?;
 

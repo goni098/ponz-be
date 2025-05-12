@@ -14,6 +14,10 @@ pub struct Model {
     pub token_address: String,
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub share: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub actual_withdraw_amount: Decimal,
+    pub log_index: i64,
+    pub tx_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

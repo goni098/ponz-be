@@ -1,12 +1,6 @@
-use alloy::{primitives::Address, sol};
-use alloy_chains::NamedChain;
+use alloy::sol;
 
-use crate::{
-    addresses::{
-        base::BASE_FUND_VAULT_CONTRACT_ADDRESS, sepolia::SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS,
-    },
-    client::PublicClient,
-};
+use crate::client::PublicClient;
 
 sol!(
     #[allow(missing_docs)]
@@ -17,13 +11,3 @@ sol!(
 );
 
 pub type FundVaultContract = FundVault::FundVaultInstance<PublicClient>;
-
-impl FundVaultContract {
-    pub fn address_by_chain(chain: NamedChain) -> Address {
-        match chain {
-            NamedChain::Base => BASE_FUND_VAULT_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS,
-            _ => panic!("FundVaultContract unsupported chain {}", chain),
-        }
-    }
-}

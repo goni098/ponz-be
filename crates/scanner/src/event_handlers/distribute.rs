@@ -7,25 +7,17 @@ use database::{
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
-use web3::contracts::router::Router::DistributeUserFund;
+use web3::{EventArgs, contracts::router::Router::DistributeUserFund};
 
 pub async fn handle_distribute_event(
     db: &DatabaseConnection,
     contract_address: Address,
     tx_hash: TxHash,
-    log_index: i32,
+    log_index: u64,
     chain: NamedChain,
     event: DistributeUserFund,
     block_timestamp: u64,
 ) -> AppResult<()> {
-    let args = serde_json::json!({
-        "strategyAddress": event.strategyAddress.to_string(),
-        "depositor": event.depositor.to_string(),
-        "depositedTokenAddress": event.depositedTokenAddress.to_string(),
-        "amount": event.amount.to_string(),
-        "swapContract": event.swapContract.to_string(),
-    });
-
     let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
         .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
 
@@ -33,9 +25,9 @@ pub async fn handle_distribute_event(
 
     repositories::contract_event::upsert(
         &db_tx,
-        ContractEventName::Distribute,
+        ContractEventName::Deposit,
         contract_address,
-        args,
+        event.json_args(),
         chain,
         tx_hash,
         log_index,
@@ -43,17 +35,7 @@ pub async fn handle_distribute_event(
     )
     .await?;
 
-    repositories::distribute_txn::create(
-        &db_tx,
-        chain,
-        event.strategyAddress,
-        event.depositor,
-        event.depositedTokenAddress,
-        event.amount,
-        event.swapContract,
-        created_at.into(),
-    )
-    .await?;
+    repositories::distribute_txn::create(&db_tx, chain, tx_hash, log_index, event).await?;
 
     db_tx.commit().await?;
 

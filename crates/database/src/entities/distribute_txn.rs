@@ -14,6 +14,15 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub amount: Decimal,
     pub swap_contract: String,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub actual_amount_out: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub distributed_fee: Decimal,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub strategy_share: Decimal,
+    pub underlying_asset: String,
+    pub log_index: i64,
+    pub tx_hash: String,
     pub is_rebalanced: bool,
 }
 

@@ -1,19 +1,22 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+use crate::enums::Pool;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "contract_event")]
+#[sea_orm(table_name = "pool")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub created_at: DateTimeWithTimeZone,
+    pub name: String,
+    pub platform: Pool,
     pub chain_id: i64,
-    pub contract_address: String,
-    pub tx_hash: String,
-    pub log_index: i64,
-    pub signature: String,
-    #[sea_orm(column_type = "JsonBinary")]
-    pub args: Json,
+    pub address: String,
+    pub strategy_address: String,
+    pub tvl: i32,
+    pub apr: i32,
+    pub swap_contract: String,
+    pub enable: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
