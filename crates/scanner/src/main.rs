@@ -4,7 +4,6 @@ use alloy::{
     eips::BlockNumberOrTag,
     providers::Provider,
     rpc::types::{Filter, FilterBlockOption},
-    sol_types::SolEvent,
 };
 use alloy_chains::NamedChain;
 use database::{
@@ -13,6 +12,7 @@ use database::{
 };
 use futures_util::future::try_join_all;
 use scanner::{
+    EXPECTED_EVENTS,
     decode_log::decode_log,
     log_handlers::{self, Context},
 };
@@ -21,18 +21,6 @@ use tokio::time::sleep;
 use web3::{
     DynChain,
     client::{PublicClient, public_client},
-    contracts::{
-        cross_chain_router::CrossChainRouter::TransferFundCrossChain,
-        lz_executor::LzExecutor::{
-            DistributeFundCrossChain, TransferFundFromRouterToFundVaultCrossChain,
-        },
-        referral::Refferal::Claim,
-        router::Router::{
-            DepositFund, DistributeUserFund, RebalanceFundSameChain, WithDrawFundSameChain,
-            WithdrawRequest,
-        },
-        stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed,
-    },
 };
 
 #[tokio::main]
@@ -75,23 +63,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
             lz_executor_address,
             stargate_bridge_address,
         ])
-        .events([
-            // cross chain router
-            TransferFundCrossChain::SIGNATURE,
-            // lz executor
-            DistributeFundCrossChain::SIGNATURE,
-            TransferFundFromRouterToFundVaultCrossChain::SIGNATURE,
-            // referral
-            Claim::SIGNATURE,
-            // router
-            DepositFund::SIGNATURE,
-            DistributeUserFund::SIGNATURE,
-            RebalanceFundSameChain::SIGNATURE,
-            WithDrawFundSameChain::SIGNATURE,
-            WithdrawRequest::SIGNATURE,
-            // stargate bridge
-            ExecuteReceiveFundCrossChainFailed::SIGNATURE,
-        ])
+        .events(EXPECTED_EVENTS)
         .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
     tracing::info!("🦀 starting scanner on {}...", chain);

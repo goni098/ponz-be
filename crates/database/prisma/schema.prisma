@@ -15,17 +15,28 @@ model renew_token {
   token   String @db.VarChar
 }
 
-model cross_chain_transfer_fund_txn {
-  id         BigInt   @id @default(autoincrement())
-  tx_hash    String   @db.VarChar
-  log_index  BigInt
-  created_at DateTime @db.Timestamptz(3)
-  chain_id   BigInt
+model transfer_fund_cross_chain_txn {
+  id                               BigInt   @id @default(autoincrement())
+  tx_hash                          String   @db.VarChar
+  log_index                        BigInt
+  created_at                       DateTime @db.Timestamptz(3)
+  chain_id                         BigInt
+  depositor                        String   @db.VarChar(42)
+  deposited_roken                  String   @db.VarChar(42)
+  token_in_for_bridge              String   @db.VarChar(42)
+  token_out_for_bridge             String   @db.VarChar(42)
+  cross_chain_dex_sender           String   @db.VarChar(42)
+  cross_chain_dex_receiver         String   @db.VarChar(42)
+  strategy_destination             String   @db.VarChar(42)
+  actual_amount_bridge_cross_chain Decimal  @db.Decimal(90, 0)
+  distribution_fee                 Decimal  @db.Decimal(90, 0)
+  transfer_fund_cross_chain_at     Decimal  @db.Decimal(90, 0)
+  transport_msg                    String   @db.VarChar
 
   @@unique([tx_hash, log_index])
 }
 
-model cross_chain_distribute_txn {
+model withdraw_fund_cross_chain_from_operator_txn {
   id         BigInt   @id @default(autoincrement())
   tx_hash    String   @db.VarChar
   log_index  BigInt

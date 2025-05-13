@@ -13,3 +13,14 @@ pub enum Pool {
     #[sea_orm(string_value = "Compound")]
     Compound,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum, Serialize)]
+#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "txn_status")]
+pub enum TxnStatus {
+    #[sea_orm(string_value = "done")]
+    Done,
+    #[sea_orm(string_value = "failed")]
+    Failed,
+    #[sea_orm(string_value = "pending")]
+    Pending,
+}

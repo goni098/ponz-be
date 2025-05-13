@@ -7,4 +7,5 @@ pub mod rebalance_txn;
 pub mod renew_token;
 pub mod setting;
 pub mod user;
+pub mod withdraw_request;
 pub mod withdraw_txn;

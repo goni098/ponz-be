@@ -7,7 +7,7 @@ use rebalance::handle_rebalance_event;
 use shared::AppResult;
 use withdraw::handle_withdraw_event;
 
-use crate::decode_log::ContractLog;
+use crate::ExpectedLog;
 
 mod claim;
 mod deposit;
@@ -23,25 +23,26 @@ pub enum Context {
 pub async fn save_log(
     db: &DatabaseConnection,
     chain: NamedChain,
-    log: ContractLog,
+    log: ExpectedLog,
     context: Context,
 ) -> AppResult<()> {
     match log {
-        ContractLog::DepositFund(log) => handle_deposit_event(db, chain, log, context).await,
-        ContractLog::DistributeUserFund(log) => {
+        ExpectedLog::DepositFund(log) => handle_deposit_event(db, chain, log, context).await,
+        ExpectedLog::DistributeUserFund(log) => {
             handle_distribute_event(db, chain, log, context).await
         }
-        ContractLog::RebalanceFundSameChain(log) => {
+        ExpectedLog::RebalanceFundSameChain(log) => {
             handle_rebalance_event(db, chain, log, context).await
         }
-        ContractLog::WithDrawFundSameChain(log) => {
+        ExpectedLog::WithDrawFundSameChain(log) => {
             handle_withdraw_event(db, chain, log, context).await
         }
-        ContractLog::Claim(log) => handle_claim_event(db, chain, log, context).await,
-        ContractLog::DistributeFundCrossChain(log) => Ok(()),
-        ContractLog::ExecuteReceiveFundCrossChainFailed(log) => Ok(()),
-        ContractLog::TransferFundCrossChain(log) => Ok(()),
-        ContractLog::TransferFundFromRouterToFundVaultCrossChain(log) => Ok(()),
-        ContractLog::WithdrawRequest(log) => Ok(()),
+        ExpectedLog::Claim(log) => handle_claim_event(db, chain, log, context).await,
+        ExpectedLog::DistributeFundCrossChain(log) => Ok(()),
+        ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => Ok(()),
+        ExpectedLog::TransferFundCrossChain(log) => Ok(()),
+        ExpectedLog::TransferFundFromRouterToFundVaultCrossChain(log) => Ok(()),
+        ExpectedLog::WithdrawRequest(log) => Ok(()),
+        ExpectedLog::WithdrawFundCrossChainFromOperator(log) => Ok(()),
     }
 }

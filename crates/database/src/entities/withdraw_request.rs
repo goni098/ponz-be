@@ -1,0 +1,25 @@
+use sea_orm::entity::prelude::*;
+use serde::Serialize;
+
+use crate::enums::TxnStatus;
+
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
+#[sea_orm(table_name = "withdraw_request")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    pub id: i64,
+    pub tx_hash: String,
+    pub log_index: i64,
+    pub created_at: DateTimeWithTimeZone,
+    pub chain_id: i64,
+    #[sea_orm(column_type = "JsonBinary")]
+    pub args: Json,
+    pub token_out: String,
+    pub status: TxnStatus,
+    pub smf_error_msg: Option<String>,
+}
+
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
+
+impl ActiveModelBehavior for ActiveModel {}

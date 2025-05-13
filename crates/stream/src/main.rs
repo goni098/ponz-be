@@ -1,32 +1,14 @@
-use alloy::{
-    providers::Provider,
-    rpc::types::{Filter, Log},
-    sol_types::SolEvent,
-};
+use alloy::{providers::Provider, rpc::types::Filter};
 use alloy_chains::NamedChain;
 use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use futures_util::StreamExt;
 use scanner::{
-    decode_log::{self, ContractLog},
+    EXPECTED_EVENTS, ExpectedLog,
+    decode_log::{self},
     log_handlers::{Context, save_log},
 };
 use shared::{AppResult, env::ENV};
-use web3::{
-    DynChain,
-    client::ws_client,
-    contracts::{
-        cross_chain_router::CrossChainRouter::TransferFundCrossChain,
-        lz_executor::LzExecutor::{
-            DistributeFundCrossChain, TransferFundFromRouterToFundVaultCrossChain,
-        },
-        referral::Refferal::Claim,
-        router::Router::{
-            DepositFund, DistributeUserFund, RebalanceFundSameChain, WithDrawFundSameChain,
-            WithdrawRequest,
-        },
-        stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed,
-    },
-};
+use web3::{DynChain, client::ws_client};
 
 #[tokio::main]
 async fn main() {
@@ -66,23 +48,7 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
             lz_executor_address,
             stargate_bridge_address,
         ])
-        .events([
-            // cross chain router
-            TransferFundCrossChain::SIGNATURE,
-            // lz executor
-            DistributeFundCrossChain::SIGNATURE,
-            TransferFundFromRouterToFundVaultCrossChain::SIGNATURE,
-            // referral
-            Claim::SIGNATURE,
-            // router
-            DepositFund::SIGNATURE,
-            DistributeUserFund::SIGNATURE,
-            RebalanceFundSameChain::SIGNATURE,
-            WithDrawFundSameChain::SIGNATURE,
-            WithdrawRequest::SIGNATURE,
-            // stargate bridge
-            ExecuteReceiveFundCrossChainFailed::SIGNATURE,
-        ]);
+        .events(EXPECTED_EVENTS);
 
     let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
 
@@ -99,9 +65,9 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     Ok(())
 }
 
-async fn process_log(chain: NamedChain, log: ContractLog) -> AppResult<()> {
+async fn process_log(chain: NamedChain, log: ExpectedLog) -> AppResult<()> {
     match log {
-        ContractLog::WithdrawRequest(log) => {
+        ExpectedLog::WithdrawRequest(log) => {
             operator::withdraw::withdraw_on_request(chain, log.inner.data).await?;
         }
         _ => {}
