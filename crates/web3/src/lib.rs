@@ -8,9 +8,8 @@ use addresses::{
         SEPOLIA_ROUTER_CONTRACT_ADDRESS,
     },
 };
-use alloy::{network::EthereumWallet, primitives::Address, providers::ProviderBuilder};
+use alloy::primitives::Address;
 use alloy_chains::NamedChain;
-use client::{PublicClient, WalletClient};
 use serde_json::Value;
 use shared::env::ENV;
 use url::Url;
@@ -19,7 +18,7 @@ pub mod addresses;
 pub mod client;
 pub mod contracts;
 
-pub enum Strategy {
+pub enum StrategyPool {
     Balancer,
     AllBridge,
     Aerodrome,
@@ -30,28 +29,24 @@ pub trait EventArgs {
 }
 
 pub trait DynChain {
-    fn public_client(&self) -> PublicClient;
-    fn wallet_client(&self, wallet: EthereumWallet) -> WalletClient;
     fn rpc_url(&self) -> Url;
+    fn ws_url(&self) -> &Url;
     fn router_contract_address(&self) -> Address;
     fn cross_chain_router_contract_address(&self) -> Address;
     fn fund_vault_contract_address(&self) -> Address;
     fn refferal_contract_address(&self) -> Address;
+    fn stargate_bridge_address(&self) -> Address;
+    fn lz_executor_address(&self) -> Address;
+    fn chain_link_data_feed_address(&self) -> Address;
 }
 
 impl DynChain for NamedChain {
-    fn public_client(&self) -> PublicClient {
-        ProviderBuilder::new()
-            .disable_recommended_fillers()
-            .with_chain(*self)
-            .connect_http(self.rpc_url())
-    }
-
-    fn wallet_client(&self, wallet: EthereumWallet) -> WalletClient {
-        ProviderBuilder::new()
-            .wallet(wallet)
-            .with_chain(*self)
-            .connect_http(self.rpc_url())
+    fn ws_url(&self) -> &Url {
+        match self {
+            NamedChain::Sepolia => &ENV.sepolia_rpc_url,
+            NamedChain::Base => &ENV.base_rpc_url,
+            _ => panic!("unsupported chain {}", self),
+        }
     }
 
     fn rpc_url(&self) -> Url {
@@ -92,5 +87,17 @@ impl DynChain for NamedChain {
             NamedChain::Sepolia => SEPOLIA_ROUTER_CONTRACT_ADDRESS,
             _ => panic!("RouterContract unsupported chain {}", self),
         }
+    }
+
+    fn lz_executor_address(&self) -> Address {
+        Address::ZERO
+    }
+
+    fn stargate_bridge_address(&self) -> Address {
+        Address::ZERO
+    }
+
+    fn chain_link_data_feed_address(&self) -> Address {
+        Address::ZERO
     }
 }

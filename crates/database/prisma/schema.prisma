@@ -15,6 +15,26 @@ model renew_token {
   token   String @db.VarChar
 }
 
+model cross_chain_transfer_fund_txn {
+  id         BigInt   @id @default(autoincrement())
+  tx_hash    String   @db.VarChar
+  log_index  BigInt
+  created_at DateTime @db.Timestamptz(3)
+  chain_id   BigInt
+
+  @@unique([tx_hash, log_index])
+}
+
+model cross_chain_distribute_txn {
+  id         BigInt   @id @default(autoincrement())
+  tx_hash    String   @db.VarChar
+  log_index  BigInt
+  created_at DateTime @db.Timestamptz(3)
+  chain_id   BigInt
+
+  @@unique([tx_hash, log_index])
+}
+
 model claim_txn {
   id         BigInt   @id @default(autoincrement())
   tx_hash    String   @db.VarChar
@@ -29,54 +49,58 @@ model claim_txn {
 }
 
 model deposit_txn {
-  id                    BigInt   @id @default(autoincrement())
-  tx_hash               String   @db.VarChar
+  id                    BigInt     @id @default(autoincrement())
+  tx_hash               String     @db.VarChar
   log_index             BigInt
-  created_at            DateTime @db.Timestamptz(3)
+  created_at            DateTime   @db.Timestamptz(3)
   chain_id              BigInt
-  receiver              String   @db.VarChar(42)
-  token_address         String   @db.VarChar(42)
-  deposit_amount        Decimal  @db.Decimal(90, 0)
-  actual_deposit_amount Decimal  @db.Decimal(90, 0)
-  is_distributed        Boolean
+  receiver              String     @db.VarChar(42)
+  token_address         String     @db.VarChar(42)
+  deposit_amount        Decimal    @db.Decimal(90, 0)
+  actual_deposit_amount Decimal    @db.Decimal(90, 0)
+  distribute_status     txn_status
+  smf_error_msg         String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
 }
 
 model distribute_txn {
-  id                      BigInt   @id @default(autoincrement())
-  tx_hash                 String   @db.VarChar
+  id                      BigInt     @id @default(autoincrement())
+  tx_hash                 String     @db.VarChar
   log_index               BigInt
-  created_at              DateTime @db.Timestamptz(3)
+  created_at              DateTime   @db.Timestamptz(3)
   chain_id                BigInt
-  strategy_address        String   @db.VarChar(42)
-  depositor               String   @db.VarChar(42)
-  deposited_token_address String   @db.VarChar(42)
-  underlying_asset        String   @db.VarChar(42)
-  swap_contract           String   @db.VarChar(42)
-  amount                  Decimal  @db.Decimal(90, 0)
-  actual_amount_out       Decimal  @db.Decimal(90, 0)
-  strategy_share          Decimal  @db.Decimal(90, 0)
-  distributed_fee         Decimal  @db.Decimal(90, 0)
-  is_rebalanced           Boolean
+  strategy_address        String     @db.VarChar(42)
+  depositor               String     @db.VarChar(42)
+  deposited_token_address String     @db.VarChar(42)
+  underlying_asset        String     @db.VarChar(42)
+  swap_contract           String     @db.VarChar(42)
+  amount                  Decimal    @db.Decimal(90, 0)
+  actual_amount_out       Decimal    @db.Decimal(90, 0)
+  strategy_share          Decimal    @db.Decimal(90, 0)
+  distributed_fee         Decimal    @db.Decimal(90, 0)
+  rebalance_status        txn_status
+  smf_error_msg           String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
 }
 
 model rebalance_txn {
-  id               BigInt   @id @default(autoincrement())
-  tx_hash          String   @db.VarChar
-  log_index        BigInt
-  created_at       DateTime @db.Timestamptz(3)
-  chain_id         BigInt
-  strategy_address String   @db.VarChar(42)
-  user_address     String   @db.VarChar(42)
-  underlying_asset String   @db.VarChar(42)
-  received_amount  Decimal  @db.Decimal(90, 0)
-  received_reward  Decimal  @db.Decimal(90, 0)
-  protocol_fee     Decimal  @db.Decimal(90, 0)
-  referral_fee     Decimal  @db.Decimal(90, 0)
-  rebalance_fee    Decimal  @db.Decimal(90, 0)
+  id                BigInt     @id @default(autoincrement())
+  tx_hash           String     @db.VarChar
+  log_index         BigInt
+  created_at        DateTime   @db.Timestamptz(3)
+  chain_id          BigInt
+  strategy_address  String     @db.VarChar(42)
+  user_address      String     @db.VarChar(42)
+  underlying_asset  String     @db.VarChar(42)
+  received_amount   Decimal    @db.Decimal(90, 0)
+  received_reward   Decimal    @db.Decimal(90, 0)
+  protocol_fee      Decimal    @db.Decimal(90, 0)
+  referral_fee      Decimal    @db.Decimal(90, 0)
+  rebalance_fee     Decimal    @db.Decimal(90, 0)
+  distribute_status txn_status
+  smf_error_msg     String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
 }
@@ -97,13 +121,54 @@ model withdraw_txn {
   @@unique([tx_hash, log_index])
 }
 
+model withdraw_request {
+  id            BigInt     @id @default(autoincrement())
+  tx_hash       String     @db.VarChar
+  log_index     BigInt
+  created_at    DateTime   @db.Timestamptz(3)
+  chain_id      BigInt
+  args          Json
+  token_out     String     @db.VarChar(42)
+  status        txn_status
+  smf_error_msg String?    @db.VarChar
+
+  @@unique([tx_hash, log_index])
+}
+
+model transfer_fund_from_router_to_vault_txn {
+  id         BigInt   @id @default(autoincrement())
+  tx_hash    String   @db.VarChar
+  log_index  BigInt
+  created_at DateTime @db.Timestamptz(3)
+  chain_id   BigInt
+
+  @@unique([tx_hash, log_index])
+}
+
+model failed_distribute_txn {
+  id                      BigInt     @id @default(autoincrement())
+  tx_hash                 String     @db.VarChar
+  log_index               BigInt
+  created_at              DateTime   @db.Timestamptz(3)
+  chain_id                BigInt
+  guid                    String     @db.VarChar
+  compose_msg             String     @db.VarChar
+  depositor               String     @db.VarChar(42)
+  deposited_token_address String     @db.VarChar(42)
+  amount                  Decimal    @db.Decimal(90, 0)
+  status                  txn_status
+  smf_error_msg           String?    @db.VarChar
+
+  @@unique([tx_hash, log_index])
+}
+
 model contract_event {
   id               BigInt   @id @default(autoincrement())
+  tx_hash          String   @db.VarChar
+  log_index        Int
   created_at       DateTime @db.Timestamptz(3)
   chain_id         BigInt
   contract_address String   @db.VarChar
-  tx_hash          String   @db.VarChar
-  log_index        Int
   signature        String   @db.VarChar
   args             Json
 
@@ -127,4 +192,10 @@ model pool {
 model setting {
   key   String @id @db.VarChar
   value String @db.VarChar
+}
+
+enum txn_status {
+  pending
+  failed
+  done
 }

@@ -3,15 +3,6 @@ name = "scanner"
 version = "0.1.0"
 edition = "2024"
 
-[[bin]]
-name = "sepolia-scanner"
-path = "./src/bin/sepolia/main.rs"
-
-[[bin]]
-name = "base-scanner"
-path = "./src/bin/base/main.rs"
-
-
 [dependencies]
 tokio = { workspace = true }
 futures-util = { workspace = true }

@@ -1,4 +1,7 @@
-use alloy::transports::{RpcError, TransportErrorKind};
+use alloy::{
+    providers::PendingTransactionError,
+    transports::{RpcError, TransportErrorKind},
+};
 use sea_orm::error::DbErr;
 
 use std::{borrow::Cow, num::ParseIntError};
@@ -34,4 +37,10 @@ pub enum AppError {
 
     #[error(transparent)]
     Io(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Contract(#[from] alloy::contract::Error),
+
+    #[error(transparent)]
+    WaitReceiptTx(#[from] PendingTransactionError),
 }

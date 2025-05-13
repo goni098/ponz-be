@@ -16,6 +16,7 @@ redis = { workspace = true }
 base64 = { workspace = true }
 
 alloy = { workspace = true }
+alloy-chains = { workspace = true }
 
 url = { workspace = true }
 

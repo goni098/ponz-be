@@ -4,3 +4,16 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+tokio = { workspace = true }
+futures-util = { workspace = true }
+
+alloy = { workspace = true }
+alloy-chains = { workspace = true }
+
+tracing = { workspace = true }
+
+database = { path = "../database" }
+shared = { path = "../shared" }
+web3 = { path = "../web3" }
+scanner = { path = "../scanner" }
+operator = { path = "../operator" }

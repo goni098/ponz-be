@@ -36,7 +36,7 @@ impl EventArgs for Router::DistributeUserFund {
             "distributedFee": self.distributedFee.to_string(),
             "strategyAddress": self.strategyAddress.to_string(),
             "strategyShare": self.strategyShare.to_string(),
-            "swapContract": self.swapContract.to_string(),
+            "swapContract": self.swapContract.to_string()
         })
     }
 }
@@ -52,7 +52,7 @@ impl EventArgs for Router::RebalanceFundSameChain {
             "referralFee": self.referralFee.to_string(),
             "strategyAddress": self.strategyAddress.to_string(),
             "underlyingAsset": self.underlyingAsset.to_string(),
-            "userAddress": self.userAddress.to_string(),
+            "userAddress": self.userAddress.to_string()
         })
     }
 }
@@ -66,7 +66,7 @@ impl EventArgs for Router::WithDrawFundSameChain {
             "receivedAmount": self.strategyAddress.to_string(),
             "receivedReward": self.tokenAddress.to_string(),
             "referralFee": self.user.to_string(),
-            "strategyAddress": self.withdrawAt.to_string(),
+            "strategyAddress": self.withdrawAt.to_string()
         })
     }
 }

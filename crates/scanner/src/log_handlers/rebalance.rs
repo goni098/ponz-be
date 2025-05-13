@@ -1,31 +1,34 @@
-use alloy::primitives::{Address, TxHash};
+use alloy::{rpc::types::Log, sol_types::SolEvent};
 use alloy_chains::NamedChain;
 use chrono::DateTime;
 use database::{
-    enums::ContractEventName,
     repositories,
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
 use shared::{AppError, AppResult};
 use web3::{EventArgs, contracts::router::Router::RebalanceFundSameChain};
 
+use super::Context;
+
 pub async fn handle_rebalance_event(
     db: &DatabaseConnection,
-    contract_address: Address,
-    tx_hash: TxHash,
-    log_index: u64,
     chain: NamedChain,
-    event: RebalanceFundSameChain,
-    block_timestamp: u64,
+    log: Log<RebalanceFundSameChain>,
+    context: Context,
 ) -> AppResult<()> {
-    let created_at = DateTime::from_timestamp(block_timestamp as i64, 0)
-        .ok_or(AppError::Custom("Invalid block_timestamp".into()))?;
+    let contract_address = log.address();
+    let log_index = log.log_index.unwrap_or_default();
+    let tx_hash = log.transaction_hash.unwrap_or_default();
+    let event = log.inner.data;
+
+    let created_at = DateTime::from_timestamp(event.rebalancedAt.to::<i64>(), 0)
+        .ok_or(AppError::Custom("Invalid rebalancedAt timestamp".into()))?;
 
     let db_tx = db.begin().await?;
 
     repositories::contract_event::upsert(
         &db_tx,
-        ContractEventName::Rebalance,
+        RebalanceFundSameChain::SIGNATURE,
         contract_address,
         event.json_args(),
         chain,
