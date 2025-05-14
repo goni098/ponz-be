@@ -5159,6 +5159,7 @@ version = "0.1.0"
 dependencies = [
  "alloy",
  "alloy-chains",
+ "serde",
  "serde_json",
  "shared",
  "strum 0.27.1",

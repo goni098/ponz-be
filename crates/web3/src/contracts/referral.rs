@@ -1,8 +1,9 @@
 use alloy::sol;
 
-use crate::{EventArgs, client::PublicClient};
+use crate::client::PublicClient;
 
 sol!(
+    #![sol(extra_derives(serde::Serialize, serde::Deserialize))]
     #[allow(missing_docs)]
     #[sol(rpc)]
     #[allow(clippy::too_many_arguments)]
@@ -11,14 +12,3 @@ sol!(
 );
 
 pub type RefferalContract = Refferal::RefferalInstance<PublicClient>;
-
-impl EventArgs for Refferal::Claim {
-    fn json_args(&self) -> serde_json::Value {
-        serde_json::json!({
-            "amount": self.amount.to_string(),
-            "from": self.from.to_string(),
-            "to": self.to.to_string(),
-            "claimAt:":self.claimAt.to_string()
-        })
-    }
-}

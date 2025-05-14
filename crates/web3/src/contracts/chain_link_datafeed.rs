@@ -1,12 +1,8 @@
-use alloy::{
-    primitives::{I256, U256, utils::format_ether},
-    providers::Provider,
-    sol,
-};
+use alloy::{primitives::U256, providers::Provider, sol};
 use alloy_chains::NamedChain;
 use shared::AppResult;
 
-use crate::{DynChain, EventArgs, client::PublicClient};
+use crate::{DynChain, client::PublicClient};
 
 sol!(
     #[allow(missing_docs)]

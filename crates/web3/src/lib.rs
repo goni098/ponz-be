@@ -24,10 +24,6 @@ pub enum StrategyPool {
     Aerodrome,
 }
 
-pub trait EventArgs {
-    fn json_args(&self) -> Value;
-}
-
 pub trait DynChain {
     fn rpc_url(&self) -> Url;
     fn ws_url(&self) -> &Url;

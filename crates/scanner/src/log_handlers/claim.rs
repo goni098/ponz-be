@@ -5,8 +5,9 @@ use database::{
     repositories,
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
+use serde_json::json;
 use shared::{AppError, AppResult};
-use web3::{EventArgs, contracts::referral::Refferal::Claim};
+use web3::contracts::referral::Refferal::Claim;
 
 use super::Context;
 
@@ -30,7 +31,7 @@ pub async fn handle_claim_event(
         &db_tx,
         Claim::SIGNATURE,
         contract_address,
-        event.json_args(),
+        json!(event),
         chain,
         tx_hash,
         log_index,

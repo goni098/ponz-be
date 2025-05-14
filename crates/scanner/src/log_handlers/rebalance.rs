@@ -5,8 +5,9 @@ use database::{
     repositories,
     sea_orm::{DatabaseConnection, TransactionTrait},
 };
+use serde_json::json;
 use shared::{AppError, AppResult};
-use web3::{EventArgs, contracts::router::Router::RebalanceFundSameChain};
+use web3::contracts::router::Router::RebalanceFundSameChain;
 
 use super::Context;
 
@@ -30,7 +31,7 @@ pub async fn handle_rebalance_event(
         &db_tx,
         RebalanceFundSameChain::SIGNATURE,
         contract_address,
-        event.json_args(),
+        json!(event),
         chain,
         tx_hash,
         log_index,

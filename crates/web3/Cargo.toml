@@ -12,5 +12,6 @@ strum = { workspace = true }
 url = { workspace = true }
 
 serde_json = { workspace = true }
+serde = { workspace = true }
 
 shared = { path = "../shared" }
