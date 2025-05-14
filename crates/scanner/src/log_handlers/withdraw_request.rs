@@ -7,14 +7,14 @@ use database::{
 };
 use serde_json::json;
 use shared::{AppError, AppResult};
-use web3::contracts::router::Router::WithDrawFundSameChain;
+use web3::contracts::router::Router::WithdrawRequest;
 
 use super::Context;
 
-pub async fn handle_withdraw_event(
+pub async fn process(
     db: &DatabaseConnection,
     chain: NamedChain,
-    log: Log<WithDrawFundSameChain>,
+    log: Log<WithdrawRequest>,
     context: Context,
 ) -> AppResult<()> {
     let contract_address = log.address();
@@ -22,24 +22,26 @@ pub async fn handle_withdraw_event(
     let tx_hash = log.transaction_hash.unwrap_or_default();
     let event = log.inner.data;
 
-    let created_at = DateTime::from_timestamp(event.withdrawAt.to::<i64>(), 0)
-        .ok_or(AppError::Custom("Invalid withdrawAt timestamp".into()))?;
+    let emit_at = DateTime::from_timestamp(event.requestedAt.to::<i64>(), 0).ok_or(
+        AppError::Custom("Invalid WithdrawRequest requestedAt timestamp".into()),
+    )?;
 
     let db_tx = db.begin().await?;
 
     repositories::contract_event::upsert(
         &db_tx,
-        WithDrawFundSameChain::SIGNATURE,
+        WithdrawRequest::SIGNATURE,
         contract_address,
         json!(event),
         chain,
         tx_hash,
         log_index,
-        created_at.into(),
+        emit_at.into(),
+        context.is_scanner(),
     )
     .await?;
 
-    repositories::withdraw_txn::upsert(&db_tx, chain, tx_hash, log_index, event).await?;
+    repositories::withdraw_request_event::upsert(&db_tx, chain, tx_hash, log_index, event).await?;
 
     db_tx.commit().await?;
 

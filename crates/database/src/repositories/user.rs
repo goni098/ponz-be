@@ -24,6 +24,7 @@ pub async fn create_if_not_exist(
     user::Entity::insert(user::ActiveModel {
         address: Set(address),
         id: Default::default(),
+        created_at: Default::default(),
     })
     .exec_with_returning(db)
     .await

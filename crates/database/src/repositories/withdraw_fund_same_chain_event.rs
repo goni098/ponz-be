@@ -4,9 +4,8 @@ use chrono::DateTime;
 use sea_orm::{ActiveValue::Set, DatabaseTransaction, DbErr, EntityTrait, sea_query::OnConflict};
 use web3::contracts::router::Router::WithDrawFundSameChain;
 
-use crate::{entities::withdraw_txn, utils::to_decimal};
+use crate::{entities::withdraw_fund_same_chain_event, utils::to_decimal};
 
-#[allow(clippy::too_many_arguments)]
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
     chain: NamedChain,
@@ -24,14 +23,14 @@ pub async fn upsert(
         withdrawAt,
     } = event;
 
-    let created_at = DateTime::from_timestamp(withdrawAt.to::<i64>(), 0)
+    let emit_at = DateTime::from_timestamp(withdrawAt.to::<i64>(), 0)
         .ok_or(DbErr::Custom("Invalid withdrawAt timestamp".into()))?
         .into();
 
-    let txn = withdraw_txn::ActiveModel {
+    let model = withdraw_fund_same_chain_event::ActiveModel {
         chain_id: Set(chain as i64),
         id: Default::default(),
-        created_at: Set(created_at),
+        emit_at: Set(emit_at),
         receiver: Set(receiver.to_string()),
         share: Set(to_decimal(share)?),
         strategy_address: Set(strategyAddress.to_string()),
@@ -42,19 +41,22 @@ pub async fn upsert(
         tx_hash: Set(tx_hash.to_string()),
     };
 
-    withdraw_txn::Entity::insert(txn)
+    withdraw_fund_same_chain_event::Entity::insert(model)
         .on_conflict(
-            OnConflict::columns([withdraw_txn::Column::TxHash, withdraw_txn::Column::LogIndex])
-                .update_columns([
-                    withdraw_txn::Column::Receiver,
-                    withdraw_txn::Column::User,
-                    withdraw_txn::Column::StrategyAddress,
-                    withdraw_txn::Column::TokenAddress,
-                    withdraw_txn::Column::Share,
-                    withdraw_txn::Column::ActualWithdrawAmount,
-                    withdraw_txn::Column::CreatedAt,
-                ])
-                .to_owned(),
+            OnConflict::columns([
+                withdraw_fund_same_chain_event::Column::TxHash,
+                withdraw_fund_same_chain_event::Column::LogIndex,
+            ])
+            .update_columns([
+                withdraw_fund_same_chain_event::Column::Receiver,
+                withdraw_fund_same_chain_event::Column::User,
+                withdraw_fund_same_chain_event::Column::StrategyAddress,
+                withdraw_fund_same_chain_event::Column::TokenAddress,
+                withdraw_fund_same_chain_event::Column::Share,
+                withdraw_fund_same_chain_event::Column::ActualWithdrawAmount,
+                withdraw_fund_same_chain_event::Column::EmitAt,
+            ])
+            .to_owned(),
         )
         .exec(db_tx)
         .await?;

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use alloy_chains::NamedChain;
 use database::sea_orm::{ConnectOptions, Database};
-use operator::{distribute, rebalance};
+use operator::{distribute, rebalance, withdraw};
 use shared::{AppResult, env::ENV};
 
 #[tokio::main]
@@ -20,6 +20,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     loop {
         let _ = distribute::process(chain, &db).await;
         let _ = rebalance::process(chain, &db).await;
+        let _ = withdraw::process(chain, &db).await;
 
         tokio::time::sleep(Duration::from_secs(60)).await;
     }

@@ -1,5 +1,4 @@
 use alloy::sol;
-use serde_json::Value;
 
 use crate::client::PublicClient;
 

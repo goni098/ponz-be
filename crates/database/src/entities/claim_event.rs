@@ -4,13 +4,18 @@ use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "renew_token")]
+#[sea_orm(table_name = "claim_event")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    #[sea_orm(unique)]
-    pub user_id: i64,
-    pub token: String,
+    pub tx_hash: String,
+    pub log_index: i64,
+    pub emit_at: DateTimeWithTimeZone,
+    pub chain_id: i64,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub amount: Decimal,
+    pub from: String,
+    pub to: String,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

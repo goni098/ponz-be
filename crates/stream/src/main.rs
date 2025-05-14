@@ -1,6 +1,12 @@
-use alloy::{providers::Provider, rpc::types::Filter};
+use alloy::{
+    providers::Provider,
+    rpc::types::{Filter, Log},
+};
 use alloy_chains::NamedChain;
-use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
+use database::{
+    repositories,
+    sea_orm::{ConnectOptions, Database, DatabaseConnection},
+};
 use futures_util::StreamExt;
 use scanner::{
     EXPECTED_EVENTS, ExpectedLog,
@@ -18,15 +24,18 @@ async fn main() {
 }
 
 async fn bootstrap(chain: NamedChain) -> AppResult<()> {
-    shared::logging::set_up("stream");
     let mut opt = ConnectOptions::new(&ENV.db_url);
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
 
     loop {
         match stream(chain, &db).await {
-            Ok(_) => {}
-            Err(error) => {}
+            Ok(_) => {
+                println!("ok");
+            }
+            Err(error) => {
+                tracing::error!("websocket error: {:#?}", error);
+            }
         }
     }
 }
@@ -53,22 +62,44 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
 
     while let Some(log) = stream.next().await {
-        if let Some(log) = decode_log::decode_log(log)? {
-            save_log(db, chain, log.clone(), Context::Stream).await?;
-            match process_log(chain, log).await {
-                Ok(_) => {}
-                Err(error) => {}
-            };
-        }
+        match process_log(chain, log, db).await {
+            Ok(_) => {}
+            Err(error) => {
+                tracing::error!("process log error: {:#?}", error);
+            }
+        };
     }
 
     Ok(())
 }
 
-async fn process_log(chain: NamedChain, log: ExpectedLog) -> AppResult<()> {
+async fn process_log(chain: NamedChain, log: Log, db: &DatabaseConnection) -> AppResult<()> {
+    let tx_hash = log.transaction_hash.unwrap_or_default();
+    let log_index = log.log_index.unwrap_or_default();
+
+    let Some(log) = decode_log::decode_log(log)? else {
+        return Ok(());
+    };
+
+    save_log(db, chain, log.clone(), Context::Stream).await?;
+
     match log {
         ExpectedLog::WithdrawRequest(log) => {
-            operator::withdraw::withdraw_on_request(chain, log.inner.data).await?;
+            match operator::withdraw::withdraw_on_request(chain, log.inner.data).await {
+                Ok(_) => {
+                    repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
+                        .await?;
+                }
+                Err(error) => {
+                    repositories::withdraw_request_event::pin_as_failed(
+                        db,
+                        tx_hash,
+                        log_index,
+                        format!("{:#?}", error),
+                    )
+                    .await?;
+                }
+            };
         }
         _ => {}
     };

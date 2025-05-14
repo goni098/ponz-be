@@ -7,7 +7,7 @@ use sea_orm::{
 };
 use web3::contracts::router::Router::DistributeUserFund;
 
-use crate::{entities::distribute_txn, utils::to_decimal};
+use crate::{entities::distribute_user_fund_event, enums::TxnStatus, utils::to_decimal};
 
 pub async fn create(
     db_tx: &DatabaseTransaction,
@@ -29,15 +29,17 @@ pub async fn create(
         distributedAt,
     } = event;
 
-    let created_at = DateTime::from_timestamp(distributedAt.to::<i64>(), 0)
-        .ok_or(DbErr::Custom("Invalid distributedAt timestamp".into()))?
+    let emit_at = DateTime::from_timestamp(distributedAt.to::<i64>(), 0)
+        .ok_or(DbErr::Custom(
+            "Invalid DistributeUserFund distributedAt timestamp".into(),
+        ))?
         .into();
 
-    let txn = distribute_txn::ActiveModel {
+    let model = distribute_user_fund_event::ActiveModel {
         chain_id: Set(chain as i64),
         id: Default::default(),
         amount: Set(to_decimal(amount)?),
-        created_at: Set(created_at),
+        emit_at: Set(emit_at),
         deposited_token_address: Set(depositedTokenAddress.to_string()),
         depositor: Set(depositor.to_string()),
         strategy_address: Set(strategyAddress.to_string()),
@@ -48,26 +50,27 @@ pub async fn create(
         strategy_share: Set(to_decimal(strategyShare)?),
         tx_hash: Set(tx_hash.to_string()),
         underlying_asset: Set(underlyingAsset.to_string()),
-        is_rebalanced: Set(false),
+        smf_error_msg: Set(None),
+        rebalance_status: Set(TxnStatus::Pending),
     };
 
-    distribute_txn::Entity::insert(txn)
+    distribute_user_fund_event::Entity::insert(model)
         .on_conflict(
             OnConflict::columns([
-                distribute_txn::Column::TxHash,
-                distribute_txn::Column::LogIndex,
+                distribute_user_fund_event::Column::TxHash,
+                distribute_user_fund_event::Column::LogIndex,
             ])
             .update_columns([
-                distribute_txn::Column::StrategyAddress,
-                distribute_txn::Column::Depositor,
-                distribute_txn::Column::DepositedTokenAddress,
-                distribute_txn::Column::Amount,
-                distribute_txn::Column::SwapContract,
-                distribute_txn::Column::UnderlyingAsset,
-                distribute_txn::Column::ActualAmountOut,
-                distribute_txn::Column::StrategyShare,
-                distribute_txn::Column::DistributedFee,
-                distribute_txn::Column::CreatedAt,
+                distribute_user_fund_event::Column::StrategyAddress,
+                distribute_user_fund_event::Column::Depositor,
+                distribute_user_fund_event::Column::DepositedTokenAddress,
+                distribute_user_fund_event::Column::Amount,
+                distribute_user_fund_event::Column::SwapContract,
+                distribute_user_fund_event::Column::UnderlyingAsset,
+                distribute_user_fund_event::Column::ActualAmountOut,
+                distribute_user_fund_event::Column::StrategyShare,
+                distribute_user_fund_event::Column::DistributedFee,
+                distribute_user_fund_event::Column::EmitAt,
             ])
             .to_owned(),
         )
@@ -79,14 +82,14 @@ pub async fn create(
 
 pub async fn find_all_unrebalanced_and_order_than_10days(
     db: &DatabaseConnection,
-) -> Result<Vec<distribute_txn::Model>, DbErr> {
+) -> Result<Vec<distribute_user_fund_event::Model>, DbErr> {
     let date = Utc::now()
         .checked_sub_days(Days::new(10))
         .ok_or(DbErr::Custom("sub days error".to_string()))?;
 
-    distribute_txn::Entity::find()
-        .filter(distribute_txn::Column::IsRebalanced.eq(false))
-        .filter(distribute_txn::Column::CreatedAt.lte(date))
+    distribute_user_fund_event::Entity::find()
+        .filter(distribute_user_fund_event::Column::RebalanceStatus.eq(TxnStatus::Pending))
+        .filter(distribute_user_fund_event::Column::EmitAt.lte(date))
         .all(db)
         .await
 }

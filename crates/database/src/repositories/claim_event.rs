@@ -4,7 +4,7 @@ use chrono::DateTime;
 use sea_orm::{ActiveValue::Set, DatabaseTransaction, DbErr, EntityTrait, sea_query::OnConflict};
 use web3::contracts::referral::Refferal::Claim;
 
-use crate::{entities::claim_txn, utils::to_decimal};
+use crate::{entities::claim_event, utils::to_decimal};
 
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
@@ -20,14 +20,14 @@ pub async fn upsert(
         claimAt,
     } = event;
 
-    let created_at = DateTime::from_timestamp(claimAt.to::<i64>(), 0)
-        .ok_or(DbErr::Custom("Invalid claimAt timestamp".into()))?
+    let emit_at = DateTime::from_timestamp(claimAt.to::<i64>(), 0)
+        .ok_or(DbErr::Custom("Invalid Claim claimAt timestamp".into()))?
         .into();
 
-    let txn = claim_txn::ActiveModel {
+    let model = claim_event::ActiveModel {
         chain_id: Set(chain as i64),
         id: Default::default(),
-        created_at: Set(created_at),
+        emit_at: Set(emit_at),
         amount: Set(to_decimal(amount)?),
         from: Set(from.to_string()),
         to: Set(to.to_string()),
@@ -35,14 +35,14 @@ pub async fn upsert(
         tx_hash: Set(tx_hash.to_string()),
     };
 
-    claim_txn::Entity::insert(txn)
+    claim_event::Entity::insert(model)
         .on_conflict(
-            OnConflict::columns([claim_txn::Column::TxHash, claim_txn::Column::LogIndex])
+            OnConflict::columns([claim_event::Column::TxHash, claim_event::Column::LogIndex])
                 .update_columns([
-                    claim_txn::Column::Amount,
-                    claim_txn::Column::From,
-                    claim_txn::Column::To,
-                    claim_txn::Column::CreatedAt,
+                    claim_event::Column::Amount,
+                    claim_event::Column::From,
+                    claim_event::Column::To,
+                    claim_event::Column::EmitAt,
                 ])
                 .to_owned(),
         )

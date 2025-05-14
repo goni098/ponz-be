@@ -1,23 +1,30 @@
 use alloy_chains::NamedChain;
-use claim::handle_claim_event;
 use database::sea_orm::DatabaseConnection;
-use deposit::handle_deposit_event;
-use distribute::handle_distribute_event;
-use rebalance::handle_rebalance_event;
 use shared::AppResult;
-use withdraw::handle_withdraw_event;
 
 use crate::ExpectedLog;
 
 mod claim;
-mod deposit;
-mod distribute;
-mod rebalance;
-mod withdraw;
-
+mod deposit_fund;
+mod distribute_fund_cross_chain;
+mod distribute_user_fund;
+mod execute_receive_fund_cross_chain_failed;
+mod rebalance_fund_same_chain;
+mod rebalance_fund_same_chain_from_cross_router;
+mod transfer_fund_cross_chain;
+mod transfer_fund_from_router_to_vault_cross_chain;
+mod withdraw_fund_cross_chain_from_operator;
+mod withdraw_fund_same_chain;
+mod withdraw_request;
 pub enum Context {
     Stream,
     Scanner,
+}
+
+impl Context {
+    pub fn is_scanner(&self) -> bool {
+        matches!(self, Self::Scanner)
+    }
 }
 
 pub async fn save_log(
@@ -27,22 +34,37 @@ pub async fn save_log(
     context: Context,
 ) -> AppResult<()> {
     match log {
-        ExpectedLog::DepositFund(log) => handle_deposit_event(db, chain, log, context).await,
+        ExpectedLog::DepositFund(log) => deposit_fund::process(db, chain, log, context).await,
         ExpectedLog::DistributeUserFund(log) => {
-            handle_distribute_event(db, chain, log, context).await
+            distribute_user_fund::process(db, chain, log, context).await
         }
         ExpectedLog::RebalanceFundSameChain(log) => {
-            handle_rebalance_event(db, chain, log, context).await
+            rebalance_fund_same_chain::process(db, chain, log, context).await
         }
         ExpectedLog::WithDrawFundSameChain(log) => {
-            handle_withdraw_event(db, chain, log, context).await
+            withdraw_fund_same_chain::process(db, chain, log, context).await
         }
-        ExpectedLog::Claim(log) => handle_claim_event(db, chain, log, context).await,
-        ExpectedLog::DistributeFundCrossChain(log) => Ok(()),
-        ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => Ok(()),
-        ExpectedLog::TransferFundCrossChain(log) => Ok(()),
-        ExpectedLog::TransferFundFromRouterToFundVaultCrossChain(log) => Ok(()),
-        ExpectedLog::WithdrawRequest(log) => Ok(()),
-        ExpectedLog::WithdrawFundCrossChainFromOperator(log) => Ok(()),
+        ExpectedLog::Claim(log) => claim::process(db, chain, log, context).await,
+        ExpectedLog::DistributeFundCrossChain(log) => {
+            distribute_fund_cross_chain::process(db, chain, log, context).await
+        }
+        ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => {
+            execute_receive_fund_cross_chain_failed::process(db, chain, log, context).await
+        }
+        ExpectedLog::TransferFundCrossChain(log) => {
+            transfer_fund_cross_chain::process(db, chain, log, context).await
+        }
+        ExpectedLog::TransferFundFromRouterToFundVaultCrossChain(log) => {
+            transfer_fund_from_router_to_vault_cross_chain::process(db, chain, log, context).await
+        }
+        ExpectedLog::WithdrawRequest(log) => {
+            withdraw_request::process(db, chain, log, context).await
+        }
+        ExpectedLog::WithdrawFundCrossChainFromOperator(log) => {
+            withdraw_fund_cross_chain_from_operator::process(db, chain, log, context).await
+        }
+        ExpectedLog::RebalanceFundSameChainFromCrossRouter(log) => {
+            rebalance_fund_same_chain_from_cross_router::process(db, chain, log, context).await
+        }
     }
 }

@@ -54,7 +54,7 @@ redis = { version = "0.31.0", features = ["tokio-comp"] }
 # random
 rand = { version = "0.9.0" }
 
-alloy = { version = "0.15.11", features = ["provider-ws"] }
+alloy = { version = "1.0.1", features = ["provider-ws"] }
 alloy-chains = { version = "0.2.0" }
 
 # enum utils

@@ -4,7 +4,8 @@ pub mod log_handlers;
 use alloy::{rpc::types::Log, sol_types::SolEvent};
 use web3::contracts::{
     cross_chain_router::CrossChainRouter::{
-        TransferFundCrossChain, WithdrawFundCrossChainFromOperator,
+        RebalanceFundSameChain as RebalanceFundSameChainFromCrossRouter, TransferFundCrossChain,
+        WithdrawFundCrossChainFromOperator,
     },
     lz_executor::LzExecutor::{
         DistributeFundCrossChain, TransferFundFromRouterToFundVaultCrossChain,
@@ -22,6 +23,7 @@ pub enum ExpectedLog {
     // cross chain router
     TransferFundCrossChain(Log<TransferFundCrossChain>),
     WithdrawFundCrossChainFromOperator(Log<WithdrawFundCrossChainFromOperator>),
+    RebalanceFundSameChainFromCrossRouter(Log<RebalanceFundSameChainFromCrossRouter>),
     // lz executor
     DistributeFundCrossChain(Log<DistributeFundCrossChain>),
     ExecuteReceiveFundCrossChainFailed(Log<ExecuteReceiveFundCrossChainFailed>),
@@ -37,10 +39,11 @@ pub enum ExpectedLog {
     TransferFundFromRouterToFundVaultCrossChain(Log<TransferFundFromRouterToFundVaultCrossChain>),
 }
 
-pub const EXPECTED_EVENTS: [&'static str; 11] = [
+pub const EXPECTED_EVENTS: [&'static str; 12] = [
     // cross chain router
     TransferFundCrossChain::SIGNATURE,
     WithdrawFundCrossChainFromOperator::SIGNATURE,
+    RebalanceFundSameChainFromCrossRouter::SIGNATURE,
     // lz executor
     DistributeFundCrossChain::SIGNATURE,
     ExecuteReceiveFundCrossChainFailed::SIGNATURE,

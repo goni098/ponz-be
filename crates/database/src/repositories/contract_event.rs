@@ -27,20 +27,22 @@ pub async fn upsert(
     chain: NamedChain,
     tx_hash: TxHash,
     log_index: u64,
-    created_at: DateTimeWithTimeZone,
+    emit_at: DateTimeWithTimeZone,
+    is_stream_missing: bool,
 ) -> Result<(), DbErr> {
-    let event = contract_event::ActiveModel {
+    let model = contract_event::ActiveModel {
         contract_address: Set(contract_address.to_string()),
         args: Set(args),
         chain_id: Set(chain as i64),
-        created_at: Set(created_at),
+        emit_at: Set(emit_at),
         id: Default::default(),
         signature: Set(signature.to_string()),
         tx_hash: Set(tx_hash.to_string()),
         log_index: Set(log_index as i64),
+        is_stream_missing: Set(is_stream_missing),
     };
 
-    contract_event::Entity::insert(event)
+    contract_event::Entity::insert(model)
         .on_conflict(
             OnConflict::columns([
                 contract_event::Column::TxHash,
@@ -50,7 +52,7 @@ pub async fn upsert(
                 contract_event::Column::ContractAddress,
                 contract_event::Column::Args,
                 contract_event::Column::ChainId,
-                contract_event::Column::CreatedAt,
+                contract_event::Column::EmitAt,
                 contract_event::Column::Signature,
             ])
             .to_owned(),

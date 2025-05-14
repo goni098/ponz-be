@@ -1,10 +1,14 @@
 use alloy::{
+    hex::FromHexError,
     providers::PendingTransactionError,
     transports::{RpcError, TransportErrorKind},
 };
 use sea_orm::error::DbErr;
 
-use std::{borrow::Cow, num::ParseIntError};
+use std::{
+    borrow::Cow,
+    num::{ParseFloatError, ParseIntError},
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
@@ -43,4 +47,13 @@ pub enum AppError {
 
     #[error(transparent)]
     WaitReceiptTx(#[from] PendingTransactionError),
+
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
+
+    #[error(transparent)]
+    FromHex(#[from] FromHexError),
+
+    #[error(transparent)]
+    ParseFloat(#[from] ParseFloatError),
 }

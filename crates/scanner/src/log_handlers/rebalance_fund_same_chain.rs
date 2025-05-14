@@ -7,14 +7,14 @@ use database::{
 };
 use serde_json::json;
 use shared::{AppError, AppResult};
-use web3::contracts::referral::Refferal::Claim;
+use web3::contracts::router::Router::RebalanceFundSameChain;
 
 use super::Context;
 
 pub async fn process(
     db: &DatabaseConnection,
     chain: NamedChain,
-    log: Log<Claim>,
+    log: Log<RebalanceFundSameChain>,
     context: Context,
 ) -> AppResult<()> {
     let contract_address = log.address();
@@ -22,14 +22,15 @@ pub async fn process(
     let tx_hash = log.transaction_hash.unwrap_or_default();
     let event = log.inner.data;
 
-    let emit_at = DateTime::from_timestamp(event.claimAt.to::<i64>(), 0)
-        .ok_or(AppError::Custom("Invalid Claim claimAt timestamp".into()))?;
+    let emit_at = DateTime::from_timestamp(event.rebalancedAt.to::<i64>(), 0).ok_or(
+        AppError::Custom("Invalid RebalanceFundSameChain rebalancedAt timestamp".into()),
+    )?;
 
     let db_tx = db.begin().await?;
 
     repositories::contract_event::upsert(
         &db_tx,
-        Claim::SIGNATURE,
+        RebalanceFundSameChain::SIGNATURE,
         contract_address,
         json!(event),
         chain,
@@ -40,7 +41,10 @@ pub async fn process(
     )
     .await?;
 
-    repositories::claim_event::upsert(&db_tx, chain, tx_hash, log_index, event).await?;
+    repositories::rebalance_balance_fund_same_chain_event::upsert(
+        &db_tx, chain, tx_hash, log_index, event,
+    )
+    .await?;
 
     db_tx.commit().await?;
 

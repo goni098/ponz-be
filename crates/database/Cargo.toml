@@ -12,3 +12,4 @@ alloy = { workspace = true }
 chrono = { workspace = true }
 
 web3 = { path = "../web3" }
+shared = { path = "../shared" }

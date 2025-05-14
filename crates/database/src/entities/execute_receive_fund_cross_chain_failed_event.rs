@@ -3,8 +3,10 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+use crate::enums::TxnStatus;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
-#[sea_orm(table_name = "contract_event")]
+#[sea_orm(table_name = "execute_receive_fund_cross_chain_failed_event")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
@@ -12,11 +14,15 @@ pub struct Model {
     pub log_index: i64,
     pub emit_at: DateTimeWithTimeZone,
     pub chain_id: i64,
-    pub contract_address: String,
-    pub signature: String,
-    #[sea_orm(column_type = "JsonBinary")]
-    pub args: Json,
-    pub is_stream_missing: bool,
+    pub guid: String,
+    pub src_id: i64,
+    pub compose_msg: String,
+    pub depositor: String,
+    pub deposited_token_address: String,
+    #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
+    pub amount: Decimal,
+    pub status: TxnStatus,
+    pub smf_error_msg: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

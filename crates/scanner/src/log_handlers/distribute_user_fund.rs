@@ -11,7 +11,7 @@ use web3::contracts::router::Router::DistributeUserFund;
 
 use super::Context;
 
-pub async fn handle_distribute_event(
+pub async fn process(
     db: &DatabaseConnection,
     chain: NamedChain,
     log: Log<DistributeUserFund>,
@@ -22,8 +22,9 @@ pub async fn handle_distribute_event(
     let tx_hash = log.transaction_hash.unwrap_or_default();
     let event = log.inner.data;
 
-    let created_at = DateTime::from_timestamp(event.distributedAt.to::<i64>(), 0)
-        .ok_or(AppError::Custom("Invalid depositedAt timestamp".into()))?;
+    let emit_at = DateTime::from_timestamp(event.distributedAt.to::<i64>(), 0).ok_or(
+        AppError::Custom("Invalid DistributeUserFund depositedAt timestamp".into()),
+    )?;
 
     let db_tx = db.begin().await?;
 
@@ -35,11 +36,13 @@ pub async fn handle_distribute_event(
         chain,
         tx_hash,
         log_index,
-        created_at.into(),
+        emit_at.into(),
+        context.is_scanner(),
     )
     .await?;
 
-    repositories::distribute_txn::create(&db_tx, chain, tx_hash, log_index, event).await?;
+    repositories::distribute_user_fund_event::create(&db_tx, chain, tx_hash, log_index, event)
+        .await?;
 
     db_tx.commit().await?;
 

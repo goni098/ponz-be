@@ -10,8 +10,8 @@ use addresses::{
 };
 use alloy::primitives::Address;
 use alloy_chains::NamedChain;
-use serde_json::Value;
 use shared::env::ENV;
+use strum::IntoEnumIterator;
 use url::Url;
 
 pub mod addresses;
