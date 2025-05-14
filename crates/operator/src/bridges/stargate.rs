@@ -12,22 +12,22 @@ use web3::{
     contracts::{router::Router::WithdrawRequest, stargate_bridge::StargateBridge},
 };
 
-use crate::withdraw::merge_asset::{TokenAsset, merge_tokens_from_withdraw_request};
+use crate::withdraw::{TokenAsset, merge_tokens_from_withdraw_request};
 
 pub async fn estimate_withdraw<P: Provider>(
     dst_chain: NamedChain,
     dst_client: P,
     event: &WithdrawRequest,
 ) -> AppResult<HashMap<Address, TokenAsset>> {
-    let source_chain: NamedChain = event
+    let src_chain: NamedChain = event
         .chainId
         .to::<u64>()
         .try_into()
         .map_err(|_| AppError::Custom("Invalid chain id from WithdrawRequest event".into()))?;
 
-    let source_client = public_client(source_chain);
+    let src_client = public_client(src_chain);
     let stargate_bridge_contract =
-        StargateBridge::new(source_chain.stargate_bridge_address(), source_client);
+        StargateBridge::new(src_chain.stargate_bridge_address(), src_client);
 
     let mut tokens = merge_tokens_from_withdraw_request(dst_client, event).await?;
 

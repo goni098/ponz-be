@@ -17,3 +17,4 @@ shared = { path = "../shared" }
 web3 = { path = "../web3" }
 scanner = { path = "../scanner" }
 operator = { path = "../operator" }
+pools = { path = "../pools" }

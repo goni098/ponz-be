@@ -3,7 +3,7 @@ use alloy_chains::NamedChain;
 use chrono::{DateTime, Days, Utc};
 use sea_orm::{
     ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, sea_query::OnConflict,
+    QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
 };
 use web3::contracts::router::Router::DistributeUserFund;
 
@@ -92,4 +92,60 @@ pub async fn find_all_unrebalanced_and_order_than_10days(
         .filter(distribute_user_fund_event::Column::EmitAt.lte(date))
         .all(db)
         .await
+}
+
+pub async fn find_unresolved(
+    db: &DatabaseConnection,
+    limit: u64,
+) -> Result<Vec<distribute_user_fund_event::Model>, DbErr> {
+    distribute_user_fund_event::Entity::find()
+        .filter(
+            distribute_user_fund_event::Column::RebalanceStatus
+                .is_in([TxnStatus::Failed, TxnStatus::Pending]),
+        )
+        .limit(limit)
+        .order_by_desc(distribute_user_fund_event::Column::EmitAt)
+        .all(db)
+        .await
+}
+
+pub async fn pin_as_resolved<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+) -> Result<(), DbErr> {
+    distribute_user_fund_event::Entity::update_many()
+        .filter(distribute_user_fund_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(distribute_user_fund_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            distribute_user_fund_event::Column::RebalanceStatus,
+            Expr::value(TxnStatus::Done),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn pin_as_failed<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+    error_msg: String,
+) -> Result<(), DbErr> {
+    distribute_user_fund_event::Entity::update_many()
+        .filter(distribute_user_fund_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(distribute_user_fund_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            distribute_user_fund_event::Column::RebalanceStatus,
+            Expr::value(TxnStatus::Failed),
+        )
+        .col_expr(
+            distribute_user_fund_event::Column::SmfErrorMsg,
+            Expr::value(error_msg),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(())
 }

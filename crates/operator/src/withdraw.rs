@@ -1,13 +1,30 @@
-pub mod merge_asset;
-mod withdraw_on_request;
+mod withdraw_when_execute_receive_fund_cross_chain_failed;
+mod withdraw_when_request;
 
+use std::collections::HashMap;
+
+use alloy::{
+    primitives::{Address, U256},
+    providers::Provider,
+};
 use alloy_chains::NamedChain;
 use database::{repositories, sea_orm::DatabaseConnection};
 use shared::AppResult;
-use web3::contracts::router::Router::WithdrawRequest;
-pub use withdraw_on_request::*;
+use web3::{
+    client::WalletClient,
+    contracts::{
+        cross_chain_router::RouterCommonType::WithdrawStrategySameChain,
+        router::Router::WithdrawRequest, strategy::Strategy,
+    },
+};
+pub use withdraw_when_execute_receive_fund_cross_chain_failed::*;
+pub use withdraw_when_request::*;
 
-pub async fn process(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
+pub async fn process(
+    chain: NamedChain,
+    wallet_client: &WalletClient,
+    db: &DatabaseConnection,
+) -> AppResult<()> {
     let unresolved_events = repositories::withdraw_request_event::find_unresolved(db, 1).await?;
 
     for unresolved_event in unresolved_events {
@@ -15,7 +32,7 @@ pub async fn process(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()
         let log_index = unresolved_event.log_index as u64;
         let event = WithdrawRequest::try_from(unresolved_event)?;
 
-        match withdraw_on_request(chain, event).await {
+        match withdraw_when_request(chain, wallet_client, event).await {
             Ok(_) => {
                 repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
                     .await?;
@@ -33,4 +50,52 @@ pub async fn process(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()
     }
 
     Ok(())
+}
+
+#[derive(Default)]
+pub struct TokenAsset {
+    pub total_amount: U256,
+    pub un_distributed_withdraw_amount: U256,
+    pub native_value: U256,
+    pub withdraw_strategy_same_chains: Vec<WithdrawStrategySameChain>,
+}
+
+pub async fn merge_tokens_from_withdraw_request<P: Provider>(
+    client: P,
+    event: &WithdrawRequest,
+) -> AppResult<HashMap<Address, TokenAsset>> {
+    let mut strategy_contract = Strategy::new(Address::ZERO, client);
+
+    let mut tokens: HashMap<Address, TokenAsset> = HashMap::new();
+
+    for asset_in_vault in &event.unDistributedWithdraw {
+        let asset = tokens.entry(asset_in_vault.tokenAddress).or_default();
+
+        asset.total_amount += asset_in_vault.unDistributedAmount;
+        asset.un_distributed_withdraw_amount += asset_in_vault.unDistributedAmount;
+    }
+
+    for asset_in_strategy in &event.withdrawStrategySameChains {
+        strategy_contract.set_address(asset_in_strategy.strategyAddress);
+
+        let token_amount = strategy_contract
+            .convertToAssets(asset_in_strategy.share)
+            .call()
+            .await?;
+
+        let token_address = strategy_contract.listUnderlyingAsset().call().await?._0;
+
+        let asset = tokens.entry(token_address).or_default();
+
+        asset.total_amount += token_amount;
+        asset
+            .withdraw_strategy_same_chains
+            .push(WithdrawStrategySameChain {
+                externalCallData: asset_in_strategy.externalCallData.clone(),
+                share: asset_in_strategy.share,
+                strategyAddress: asset_in_strategy.strategyAddress,
+            });
+    }
+
+    Ok(tokens)
 }

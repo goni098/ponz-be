@@ -5,7 +5,7 @@ pub mod distribute_fund_cross_chain;
 pub mod distribute_user_fund_event;
 pub mod execute_receive_fund_cross_chain_failed_event;
 pub mod pool;
-pub mod rebalance_balance_fund_same_chain_event;
+pub mod rebalance_fund_same_chain_event;
 pub mod renew_token;
 pub mod setting;
 pub mod transfer_fund_cross_chain_event;

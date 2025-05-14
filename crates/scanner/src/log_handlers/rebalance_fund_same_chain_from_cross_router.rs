@@ -41,7 +41,7 @@ pub async fn process(
     )
     .await?;
 
-    repositories::rebalance_balance_fund_same_chain_event::upsert(
+    repositories::rebalance_fund_same_chain_event::upsert(
         &db_tx,
         chain,
         tx_hash,

@@ -36,16 +36,18 @@ model transfer_fund_cross_chain_event {
 }
 
 model withdraw_fund_cross_chain_from_operator_event {
-  id               BigInt   @id @default(autoincrement())
-  tx_hash          String   @db.VarChar
-  log_index        BigInt
-  emit_at          DateTime @db.Timestamptz(3)
-  chain_id         BigInt
-  receiver         String   @db.VarChar(42)
-  token_out        String   @db.VarChar(42)
-  transport_msg    String   @db.VarChar
-  total_amount_out Decimal  @db.Decimal(90, 0)
-  withdraw_fee     Decimal  @db.Decimal(90, 0)
+  id                BigInt     @id @default(autoincrement())
+  tx_hash           String     @db.VarChar
+  log_index         BigInt
+  emit_at           DateTime   @db.Timestamptz(3)
+  chain_id          BigInt
+  receiver          String     @db.VarChar(42)
+  token_out         String     @db.VarChar(42)
+  transport_msg     String     @db.VarChar
+  total_amount_out  Decimal    @db.Decimal(90, 0)
+  withdraw_fee      Decimal    @db.Decimal(90, 0)
+  distribute_status txn_status
+  smf_error_msg     String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
 }

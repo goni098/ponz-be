@@ -23,7 +23,16 @@ pub struct ExternalPoolInfo {
 }
 
 impl ExternalPoolsService {
-    pub async fn find_all(&self, pools: &[SupportedPool]) -> AppResult<Vec<ExternalPoolInfo>> {
+    pub fn new() -> Self {
+        Self {
+            http_client: reqwest::Client::new(),
+        }
+    }
+
+    pub async fn find_top_choices(
+        &self,
+        pools: &[SupportedPool],
+    ) -> AppResult<Vec<ExternalPoolInfo>> {
         let mut all_pools = vec![];
 
         let allbridge_pools = allbridge::fetch_pools_info(&self.http_client, pools).await?;

@@ -3,6 +3,8 @@
 use sea_orm::entity::prelude::*;
 use serde::Serialize;
 
+use crate::enums::TxnStatus;
+
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize)]
 #[sea_orm(table_name = "withdraw_fund_cross_chain_from_operator_event")]
 pub struct Model {
@@ -19,6 +21,8 @@ pub struct Model {
     pub total_amount_out: Decimal,
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub withdraw_fee: Decimal,
+    pub distribute_status: TxnStatus,
+    pub smf_error_msg: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

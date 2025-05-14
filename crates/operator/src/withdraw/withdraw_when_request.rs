@@ -1,5 +1,4 @@
 use alloy::{
-    network::EthereumWallet,
     primitives::{Address, Bytes, U256},
     providers::Provider,
 };
@@ -7,7 +6,7 @@ use alloy_chains::NamedChain;
 use shared::{AppError, AppResult};
 use web3::{
     DynChain,
-    client::wallet_client,
+    client::{WalletClient, wallet_client},
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         cross_chain_router::{
@@ -22,26 +21,31 @@ use web3::{
     },
 };
 
-use crate::{bridges::stargate, withdraw::merge_asset::merge_tokens_from_withdraw_request};
+use crate::{bridges::stargate, withdraw::merge_tokens_from_withdraw_request};
 
-pub async fn withdraw_on_request(dst_chain: NamedChain, event: WithdrawRequest) -> AppResult<()> {
-    let source_chain: NamedChain = event
+pub async fn withdraw_when_request(
+    dst_chain: NamedChain,
+    dst_wallet_client: &WalletClient,
+    event: WithdrawRequest,
+) -> AppResult<()> {
+    let src_chain: NamedChain = event
         .chainId
         .to::<u64>()
         .try_into()
         .map_err(|_| AppError::Custom("Invalid chain id from WithdrawRequest event".into()))?;
 
-    if source_chain == dst_chain {
-        withdraw_same_chain(source_chain, event).await
+    if src_chain == dst_chain {
+        withdraw_same_chain(src_chain, dst_wallet_client, event).await
     } else {
-        withdraw_cross_chain(source_chain, dst_chain, event).await
+        withdraw_cross_chain(dst_chain, src_chain, dst_wallet_client, event).await
     }
 }
 
-async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppResult<()> {
-    let wallet = EthereumWallet::default();
-    let wallet_client = wallet_client(chain, wallet);
-
+async fn withdraw_same_chain(
+    chain: NamedChain,
+    wallet_client: &WalletClient,
+    event: WithdrawRequest,
+) -> AppResult<()> {
     let cross_router_contract =
         CrossChainRouter::new(chain.cross_chain_router_contract_address(), &wallet_client);
 
@@ -75,9 +79,11 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
         )
         .into_transaction_request();
 
-    let gas = wallet_client.estimate_gas(tx_to_et).await?;
+    let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
+    let gas_price = wallet_client.get_gas_price().await?;
 
-    let withdraw_fee = connvert_eth_to_usd(chain, U256::from(gas), &wallet_client).await?;
+    let withdraw_fee =
+        connvert_eth_to_usd(chain, &wallet_client, U256::from(gas * gas_price)).await?;
 
     let pending_tx = cross_router_contract
         .withdrawFundSameChain(
@@ -89,7 +95,7 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
         .send()
         .await?;
 
-    let tx_hash = pending_tx.tx_hash();
+    let tx_hash = *pending_tx.tx_hash();
 
     tracing::info!(
         "Waiting for withdrawFundSameChain transaction... {}",
@@ -98,26 +104,32 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
 
     pending_tx.watch().await?;
 
+    tracing::info!(
+        "Execute withdrawFundSameChain transaction successfully {}",
+        tx_hash
+    );
+
     Ok(())
 }
 
-async fn withdraw_cross_chain(
-    source_chain: NamedChain,
+async fn withdraw_cross_chain<P: Provider>(
     dst_chain: NamedChain,
+    src_chain: NamedChain,
+    dst_client: P,
     event: WithdrawRequest,
 ) -> AppResult<()> {
-    let wallet = EthereumWallet::default();
-    let wallet_client = wallet_client(source_chain, wallet);
+    let src_wallet_client = wallet_client(src_chain);
+
     let cross_router_contract = CrossChainRouter::new(
-        source_chain.cross_chain_router_contract_address(),
-        &wallet_client,
+        src_chain.cross_chain_router_contract_address(),
+        &src_wallet_client,
     );
     let stargate_bridge_contract = StargateBridge::new(
-        source_chain.cross_chain_router_contract_address(),
-        &wallet_client,
+        src_chain.cross_chain_router_contract_address(),
+        &src_wallet_client,
     );
 
-    let tokens = stargate::estimate_withdraw(dst_chain, &wallet_client, &event).await?;
+    let tokens = stargate::estimate_withdraw(dst_chain, &dst_client, &event).await?;
 
     let transport_msg = stargate_bridge_contract
         .prepareTransportMsg(dst_chain as u32, 0)
@@ -131,7 +143,7 @@ async fn withdraw_cross_chain(
     let withdraw_strategy_multiple_chains_v2: Vec<WithdrawStrategyMultipleChainsV2> = tokens
         .into_iter()
         .map(|(token_address, asset)| WithdrawStrategyMultipleChainsV2 {
-            crossChain: source_chain.stargate_bridge_address(),
+            crossChain: dst_chain.stargate_bridge_address(),
             nativeValue: asset.native_value,
             transportMsg: transport_msg.clone(),
             slippage: U256::from(50),
@@ -161,12 +173,13 @@ async fn withdraw_cross_chain(
         .value(total_value_to_send)
         .into_transaction_request();
 
-    let gas = wallet_client.estimate_gas(tx_to_et).await?;
+    let gas = src_wallet_client.estimate_gas(tx_to_et).await? as u128;
+    let gas_price = src_wallet_client.get_gas_price().await?;
 
     let withdraw_fee = connvert_eth_to_usd(
-        source_chain,
-        U256::from(U256::from(gas) + total_value_to_send),
-        &wallet_client,
+        dst_chain,
+        &src_wallet_client,
+        U256::from(U256::from(gas * gas_price) + total_value_to_send),
     )
     .await?;
 

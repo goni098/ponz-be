@@ -48,9 +48,9 @@ pub async fn ws_client(chain: NamedChain) -> AppResult<RootProvider> {
     Ok(provider)
 }
 
-pub fn wallet_client(chain: NamedChain, wallet: EthereumWallet) -> WalletClient {
+pub fn wallet_client(chain: NamedChain) -> WalletClient {
     ProviderBuilder::new()
-        .wallet(wallet)
+        .wallet(chain.operator_wallet())
         .with_chain_id(chain as u64)
         .connect_http(chain.rpc_url())
 }

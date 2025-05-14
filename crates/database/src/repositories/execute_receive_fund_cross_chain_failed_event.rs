@@ -1,7 +1,10 @@
 use alloy::primitives::TxHash;
 use alloy_chains::NamedChain;
 use chrono::DateTime;
-use sea_orm::{ActiveValue::Set, DatabaseTransaction, DbErr, EntityTrait, sea_query::OnConflict};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
+};
 use web3::contracts::stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed;
 
 use crate::{
@@ -65,6 +68,62 @@ pub async fn upsert(
             .to_owned(),
         )
         .exec(db_tx)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn find_unresolved(
+    db: &DatabaseConnection,
+    limit: u64,
+) -> Result<Vec<execute_receive_fund_cross_chain_failed_event::Model>, DbErr> {
+    execute_receive_fund_cross_chain_failed_event::Entity::find()
+        .filter(
+            execute_receive_fund_cross_chain_failed_event::Column::Status
+                .is_in([TxnStatus::Failed, TxnStatus::Pending]),
+        )
+        .limit(limit)
+        .order_by_desc(execute_receive_fund_cross_chain_failed_event::Column::EmitAt)
+        .all(db)
+        .await
+}
+
+pub async fn pin_as_resolved<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+) -> Result<(), DbErr> {
+    execute_receive_fund_cross_chain_failed_event::Entity::update_many()
+        .filter(execute_receive_fund_cross_chain_failed_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(execute_receive_fund_cross_chain_failed_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            execute_receive_fund_cross_chain_failed_event::Column::Status,
+            Expr::value(TxnStatus::Done),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn pin_as_failed<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+    error_msg: String,
+) -> Result<(), DbErr> {
+    execute_receive_fund_cross_chain_failed_event::Entity::update_many()
+        .filter(execute_receive_fund_cross_chain_failed_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(execute_receive_fund_cross_chain_failed_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            execute_receive_fund_cross_chain_failed_event::Column::Status,
+            Expr::value(TxnStatus::Failed),
+        )
+        .col_expr(
+            execute_receive_fund_cross_chain_failed_event::Column::SmfErrorMsg,
+            Expr::value(error_msg),
+        )
+        .exec(db)
         .await?;
 
     Ok(())

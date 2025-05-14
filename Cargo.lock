@@ -4371,6 +4371,7 @@ dependencies = [
  "database",
  "futures-util",
  "operator",
+ "pools",
  "scanner",
  "shared",
  "tokio",

@@ -5,7 +5,7 @@ pub fn parse_chain_arg() -> NamedChain {
 
     let chain_id = args
         .get(2)
-        .expect(format!("Missing chain_id arg, actual args: {:?}", args).as_str())
+        .unwrap_or_else(|| panic!("Missing chain_id arg, actual args: {:?}", args))
         .parse::<u64>()
         .expect("Expected u64 chain_id");
 

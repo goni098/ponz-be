@@ -3,7 +3,7 @@ use alloy_chains::NamedChain;
 use chrono::DateTime;
 use sea_orm::{
     ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, QuerySelect, prelude::Expr, sea_query::OnConflict,
+    QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
 };
 use serde_json::json;
 use web3::contracts::router::Router::WithdrawRequest;
@@ -61,6 +61,7 @@ pub async fn find_unresolved(
         .filter(
             withdraw_request_event::Column::Status.is_in([TxnStatus::Pending, TxnStatus::Failed]),
         )
+        .order_by_desc(withdraw_request_event::Column::EmitAt)
         .limit(limit)
         .all(db)
         .await

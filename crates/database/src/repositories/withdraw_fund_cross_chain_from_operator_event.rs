@@ -1,10 +1,15 @@
 use alloy::primitives::TxHash;
 use alloy_chains::NamedChain;
 use chrono::DateTime;
-use sea_orm::{ActiveValue::Set, DatabaseTransaction, DbErr, EntityTrait, sea_query::OnConflict};
+use sea_orm::{
+    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
+};
 use web3::contracts::cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator;
 
-use crate::{entities::withdraw_fund_cross_chain_from_operator_event, utils::to_decimal};
+use crate::{
+    entities::withdraw_fund_cross_chain_from_operator_event, enums::TxnStatus, utils::to_decimal,
+};
 
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
@@ -39,6 +44,8 @@ pub async fn upsert(
         total_amount_out: Set(to_decimal(totalAmountOut)?),
         transport_msg: Set(transportMsg.to_string()),
         withdraw_fee: Set(to_decimal(withdrawFee)?),
+        smf_error_msg: Set(None),
+        distribute_status: Set(TxnStatus::Pending),
     };
 
     withdraw_fund_cross_chain_from_operator_event::Entity::insert(model)
@@ -58,6 +65,62 @@ pub async fn upsert(
             .to_owned(),
         )
         .exec(db_tx)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn find_unresolved(
+    db: &DatabaseConnection,
+    limit: u64,
+) -> Result<Vec<withdraw_fund_cross_chain_from_operator_event::Model>, DbErr> {
+    withdraw_fund_cross_chain_from_operator_event::Entity::find()
+        .filter(
+            withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus
+                .is_in([TxnStatus::Failed, TxnStatus::Pending]),
+        )
+        .limit(limit)
+        .order_by_desc(withdraw_fund_cross_chain_from_operator_event::Column::EmitAt)
+        .all(db)
+        .await
+}
+
+pub async fn pin_as_resolved<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+) -> Result<(), DbErr> {
+    withdraw_fund_cross_chain_from_operator_event::Entity::update_many()
+        .filter(withdraw_fund_cross_chain_from_operator_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(withdraw_fund_cross_chain_from_operator_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus,
+            Expr::value(TxnStatus::Done),
+        )
+        .exec(db)
+        .await?;
+
+    Ok(())
+}
+
+pub async fn pin_as_failed<T: ToString>(
+    db: &DatabaseConnection,
+    tx_hash: T,
+    log_index: u64,
+    error_msg: String,
+) -> Result<(), DbErr> {
+    withdraw_fund_cross_chain_from_operator_event::Entity::update_many()
+        .filter(withdraw_fund_cross_chain_from_operator_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(withdraw_fund_cross_chain_from_operator_event::Column::LogIndex.eq(log_index))
+        .col_expr(
+            withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus,
+            Expr::value(TxnStatus::Failed),
+        )
+        .col_expr(
+            withdraw_fund_cross_chain_from_operator_event::Column::SmfErrorMsg,
+            Expr::value(error_msg),
+        )
+        .exec(db)
         .await?;
 
     Ok(())

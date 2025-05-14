@@ -17,8 +17,8 @@ pub type ChainLinkDataFeedContract = ChainLinkDataFeed::ChainLinkDataFeedInstanc
 // 1 Unit = 10e8;
 pub async fn connvert_eth_to_usd<P: Provider>(
     chain: NamedChain,
-    eth_in_wei: U256,
     client: P,
+    eth_in_wei: U256,
 ) -> AppResult<U256> {
     let chain_link_data_feed_contract =
         ChainLinkDataFeed::new(chain.chain_link_data_feed_address(), client);
