@@ -4,6 +4,7 @@ use shared::AppResult;
 
 mod allbridge;
 
+#[derive(Default)]
 pub struct ExternalPoolsService {
     http_client: reqwest::Client,
 }

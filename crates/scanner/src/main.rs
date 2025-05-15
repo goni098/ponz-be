@@ -30,7 +30,7 @@ async fn main() {
     bootstrap(chain).await.unwrap();
 }
 
-const MAX_RANGE: u64 = 10_000;
+const MAX_RANGE: u64 = 1;
 
 async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let mut opt = ConnectOptions::new(&ENV.db_url);
@@ -63,16 +63,16 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
             lz_executor_address,
             stargate_bridge_address,
         ])
-        .events(EXPECTED_EVENTS)
+        // .events(EXPECTED_EVENTS)
         .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
     tracing::info!("🦀 starting scanner on {}...", chain);
 
     tracing::info!("router_address: {}", router_address);
-    tracing::info!("cross_chain_router_address: {}", router_address);
-    tracing::info!("referral_address: {}", router_address);
-    tracing::info!("lz_executor_address: {}", router_address);
-    tracing::info!("stargate_bridge_address: {}", router_address);
+    tracing::info!("cross_chain_router_address: {}", cross_chain_router_address);
+    tracing::info!("referral_address: {}", referral_address);
+    tracing::info!("lz_executor_address: {}", lz_executor_address);
+    tracing::info!("stargate_bridge_address: {}", stargate_bridge_address);
 
     loop {
         match scan(chain, &client, &db, &mut filter).await {

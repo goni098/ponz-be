@@ -7,6 +7,7 @@ sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     #[allow(clippy::too_many_arguments)]
+    #[derive(Debug)]
     Refferal,
     "src/abis/referral.abi.json"
 );

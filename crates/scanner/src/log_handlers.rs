@@ -33,6 +33,7 @@ pub async fn save_log(
     log: ExpectedLog,
     context: Context,
 ) -> AppResult<()> {
+    dbg!(&log);
     match log {
         ExpectedLog::DepositFund(log) => deposit_fund::process(db, chain, log, context).await,
         ExpectedLog::DistributeUserFund(log) => {

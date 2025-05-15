@@ -1,19 +1,13 @@
 use alloy::primitives::{Address, address};
 
-pub const ARB_SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS: Address =
-    address!("1d9aafd68c9f8b5f6deb25c8243e86c31ea9f102");
+pub const ROUTER: Address = address!("0xed91007e54875Ac5A0D22b85822e9864a1CE2589");
 
-pub const ARB_SEPOLIA_ROUTER_CONTRACT_ADDRESS: Address =
-    address!("1a842a4f6c9fada6230581cafbe6619d4b3aba7d");
+pub const CROSS_ROUTER: Address = address!("0xc43AEEd6fBE99bf0AfbBFB0D0Fc1523A8c81E0f7");
 
-pub const ARB_SEPOLIA_ALL_BRIGDE_CONTRACT_ADDRESS: Address =
-    address!("6df81526f93cd5c66b2b509baeb91bdb832c9a85");
+pub const FUND_VAULT: Address = address!("0x0e1bb2a458db603ec57279126e6b1362433569c5");
 
-pub const ARB_SEPOLIA_AERODROME_CONTRACT_ADDRESS: Address =
-    address!("85afFE800e3D5098Cf9aED4749E765A4a137293D");
+pub const REFERRAL: Address = address!("0x39a18374B0357572E23c17F3057a2B0D8ed684A5");
 
-pub const ARB_SEPOLIA_BALANCER_CONTRACT_ADDRESS: Address =
-    address!("d9eC31EFcDB4d98e6578eCB70b970eC60a064Fc2");
+pub const STARGATE_BRIGDE: Address = address!("0xE7C33CB97428C258E9637b2449368F13a5B6bACC");
 
-pub const ARB_SEPOLIA_REFERRAL_CONTRACT_ADDRESS: Address =
-    address!("39a18374B0357572E23c17F3057a2B0D8ed684A5");
+pub const LZ_EXECUTOR: Address = address!("0x2CCA08ae69E0C44b18a57Ab2A87644234dAebaE4");

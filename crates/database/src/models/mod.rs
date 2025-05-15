@@ -103,3 +103,10 @@ impl TryFrom<execute_receive_fund_cross_chain_failed_event::Model>
         Ok(event)
     }
 }
+// #[cfg(test)]
+// mod test {
+//     use crate::entities::withdraw_request_event;
+
+//     #[test]
+//     fn convert_withdraw_request_event() {}
+// }

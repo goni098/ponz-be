@@ -7,6 +7,7 @@ sol!(
     #[allow(missing_docs)]
     #[sol(rpc)]
     #[allow(clippy::too_many_arguments)]
+    #[derive(Debug)]
     LzExecutor,
     "src/abis/lz-executor.abi.json"
 );

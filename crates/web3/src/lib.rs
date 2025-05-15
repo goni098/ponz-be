@@ -1,13 +1,4 @@
-use addresses::{
-    base::{
-        BASE_FUND_VAULT_CONTRACT_ADDRESS, BASE_REFERRAL_CONTRACT_ADDRESS,
-        BASE_ROUTER_CONTRACT_ADDRESS,
-    },
-    sepolia::{
-        SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS, SEPOLIA_REFERRAL_CONTRACT_ADDRESS,
-        SEPOLIA_ROUTER_CONTRACT_ADDRESS,
-    },
-};
+use addresses::{arb_sepolia, arbitrum, base, sepolia};
 use alloy::primitives::Address;
 use alloy_chains::NamedChain;
 use shared::env::ENV;
@@ -47,50 +38,90 @@ impl DynChain for NamedChain {
 
     fn rpc_url(&self) -> Url {
         match self {
-            NamedChain::Sepolia => ENV.sepolia_rpc_url.clone(),
             NamedChain::Base => ENV.base_rpc_url.clone(),
-            _ => panic!("unsupported chain {}", self),
+            NamedChain::Arbitrum => ENV.arbitrum_rpc_url.clone(),
+            NamedChain::Sepolia => ENV.sepolia_rpc_url.clone(),
+            NamedChain::ArbitrumSepolia => ENV.arbitrum_rpc_url.clone(),
+            _ => panic!("can not resolve rpc_url, unsupported chain {}", self),
         }
     }
 
     fn cross_chain_router_contract_address(&self) -> Address {
         match self {
-            NamedChain::Base => BASE_FUND_VAULT_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS,
-            _ => panic!("FundVaultContract unsupported chain {}", self),
+            NamedChain::Base => base::CROSS_ROUTER,
+            NamedChain::Arbitrum => arbitrum::CROSS_ROUTER,
+            NamedChain::Sepolia => sepolia::CROSS_ROUTER,
+            NamedChain::ArbitrumSepolia => arb_sepolia::CROSS_ROUTER,
+            _ => panic!(
+                "can not resolve cross_chain_router_contract_address, unsupported chain {}",
+                self
+            ),
         }
     }
 
     fn fund_vault_contract_address(&self) -> Address {
         match self {
-            NamedChain::Base => BASE_FUND_VAULT_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_FUND_VAULT_CONTRACT_ADDRESS,
-            _ => panic!("FundVaultContract unsupported chain {}", self),
+            NamedChain::Base => base::FUND_VAULT,
+            NamedChain::Arbitrum => arbitrum::FUND_VAULT,
+            NamedChain::Sepolia => sepolia::FUND_VAULT,
+            NamedChain::ArbitrumSepolia => arb_sepolia::FUND_VAULT,
+            _ => panic!(
+                "can not resolve fund_vault_contract_address, unsupported chain {}",
+                self
+            ),
         }
     }
 
     fn refferal_contract_address(&self) -> Address {
         match self {
-            NamedChain::Base => BASE_REFERRAL_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_REFERRAL_CONTRACT_ADDRESS,
-            _ => panic!("RefferalContract unsupported chain {}", self),
+            NamedChain::Base => base::REFERRAL,
+            NamedChain::Arbitrum => arbitrum::REFERRAL,
+            NamedChain::Sepolia => sepolia::REFERRAL,
+            NamedChain::ArbitrumSepolia => arb_sepolia::REFERRAL,
+            _ => panic!(
+                "can not resolve refferal_contract_address, unsupported chain {}",
+                self
+            ),
         }
     }
 
     fn router_contract_address(&self) -> Address {
         match self {
-            NamedChain::Base => BASE_ROUTER_CONTRACT_ADDRESS,
-            NamedChain::Sepolia => SEPOLIA_ROUTER_CONTRACT_ADDRESS,
-            _ => panic!("RouterContract unsupported chain {}", self),
+            NamedChain::Base => base::ROUTER,
+            NamedChain::Arbitrum => arbitrum::ROUTER,
+            NamedChain::Sepolia => sepolia::ROUTER,
+            NamedChain::ArbitrumSepolia => arb_sepolia::ROUTER,
+            _ => panic!(
+                "can not resolve router_contract_address, unsupported chain {}",
+                self
+            ),
         }
     }
 
     fn lz_executor_address(&self) -> Address {
-        Address::ZERO
+        match self {
+            NamedChain::Base => base::LZ_EXECUTOR,
+            NamedChain::Arbitrum => arbitrum::LZ_EXECUTOR,
+            NamedChain::Sepolia => sepolia::LZ_EXECUTOR,
+            NamedChain::ArbitrumSepolia => arb_sepolia::LZ_EXECUTOR,
+            _ => panic!(
+                "can not resolve lz_executor_address, unsupported chain {}",
+                self
+            ),
+        }
     }
 
     fn stargate_bridge_address(&self) -> Address {
-        Address::ZERO
+        match self {
+            NamedChain::Base => base::STARGATE_BRIGDE,
+            NamedChain::Arbitrum => arbitrum::STARGATE_BRIGDE,
+            NamedChain::Sepolia => sepolia::STARGATE_BRIGDE,
+            NamedChain::ArbitrumSepolia => arb_sepolia::STARGATE_BRIGDE,
+            _ => panic!(
+                "can not resolve router_contract_address, unsupported chain {}",
+                self
+            ),
+        }
     }
 
     fn chain_link_data_feed_address(&self) -> Address {

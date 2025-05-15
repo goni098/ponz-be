@@ -18,7 +18,7 @@ use web3::contracts::{
     stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ExpectedLog {
     // cross chain router
     TransferFundCrossChain(Log<TransferFundCrossChain>),
