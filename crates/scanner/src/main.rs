@@ -30,7 +30,7 @@ async fn main() {
     bootstrap(chain).await.unwrap();
 }
 
-const MAX_RANGE: u64 = 312;
+const MAX_RANGE: u64 = 499;
 
 async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let mut opt = ConnectOptions::new(&ENV.db_url);
@@ -66,22 +66,17 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
         .events(EXPECTED_EVENTS)
         .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
-    tracing::info!("🦀 starting scanner on {}...", chain);
-
     tracing::info!("router_address: {}", router_address);
     tracing::info!("cross_chain_router_address: {}", cross_chain_router_address);
     tracing::info!("referral_address: {}", referral_address);
     tracing::info!("lz_executor_address: {}", lz_executor_address);
     tracing::info!("stargate_bridge_address: {}", stargate_bridge_address);
 
+    tracing::info!("🦀 starting scanner on {}...", chain);
+
     loop {
         match scan(chain, &client, &db, &mut filter).await {
             Ok(next) => {
-                tracing::info!(
-                    "scanned from {} to {} successfully",
-                    filter.get_from_block().unwrap_or_default(),
-                    filter.get_to_block().unwrap_or_default(),
-                );
                 filter = filter.from_block(next);
             }
             Err(error) => {
@@ -123,9 +118,18 @@ async fn scan(
         };
     }
 
+    let needed_logs = tasks.len();
+
     try_join_all(tasks).await?;
 
     repositories::setting::set(db, Setting::ScannedBlock(chain), to_block.to_string()).await?;
+
+    tracing::info!(
+        "scanned from {} to {} successfully with {} logs",
+        from_block,
+        to_block,
+        needed_logs
+    );
 
     Ok(BlockNumberOrTag::Number(to_block))
 }

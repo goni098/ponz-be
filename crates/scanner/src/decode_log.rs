@@ -1,7 +1,9 @@
 use alloy::{rpc::types::Log, sol_types::SolEvent};
 use shared::AppResult;
 use web3::contracts::{
-    cross_chain_router::CrossChainRouter::TransferFundCrossChain,
+    cross_chain_router::CrossChainRouter::{
+        TransferFundCrossChain, WithdrawFundCrossChainFromOperator,
+    },
     lz_executor::LzExecutor::{
         DistributeFundCrossChain, TransferFundFromRouterToFundVaultCrossChain,
     },
@@ -40,6 +42,9 @@ pub fn decode_log(log: Log) -> AppResult<Option<ExpectedLog>> {
         Some(&WithdrawRequest::SIGNATURE_HASH) => Some(ExpectedLog::WithdrawRequest(decode(log)?)),
         Some(&ExecuteReceiveFundCrossChainFailed::SIGNATURE_HASH) => Some(
             ExpectedLog::ExecuteReceiveFundCrossChainFailed(decode(log)?),
+        ),
+        Some(&WithdrawFundCrossChainFromOperator::SIGNATURE_HASH) => Some(
+            ExpectedLog::WithdrawFundCrossChainFromOperator(decode(log)?),
         ),
         _ => None,
     };

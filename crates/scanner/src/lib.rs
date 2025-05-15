@@ -39,11 +39,11 @@ pub enum ExpectedLog {
     TransferFundFromRouterToFundVaultCrossChain(Log<TransferFundFromRouterToFundVaultCrossChain>),
 }
 
-pub const EXPECTED_EVENTS: [&str; 12] = [
+pub const EXPECTED_EVENTS: [&str; 11] = [
     // cross chain router
     TransferFundCrossChain::SIGNATURE,
     WithdrawFundCrossChainFromOperator::SIGNATURE,
-    RebalanceFundSameChainFromCrossRouter::SIGNATURE,
+    // RebalanceFundSameChainFromCrossRouter::SIGNATURE,
     // lz executor
     DistributeFundCrossChain::SIGNATURE,
     ExecuteReceiveFundCrossChainFailed::SIGNATURE,
