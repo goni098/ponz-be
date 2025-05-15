@@ -9,6 +9,7 @@ use database::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
 use futures_util::StreamExt;
+use operator::withdraw::withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed;
 use pools::ExternalPoolsService;
 use scanner::{
     EXPECTED_EVENTS, ExpectedLog,
@@ -36,10 +37,11 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     loop {
         match stream(chain, &db).await {
             Ok(_) => {
-                println!("ok");
+                tracing::info!("🦀 stream is running on {}", chain);
             }
             Err(error) => {
-                tracing::error!("websocket error: {:#?}", error);
+                tracing::error!("websocket has disconnected: {:#?}", error);
+                tracing::info!("reconnecting...");
             }
         }
     }
@@ -53,6 +55,12 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     let referral_address = chain.refferal_contract_address();
     let lz_executor_address = chain.lz_executor_address();
     let stargate_bridge_address = chain.stargate_bridge_address();
+
+    tracing::info!("router_address: {}", router_address);
+    tracing::info!("cross_chain_router_address: {}", router_address);
+    tracing::info!("referral_address: {}", router_address);
+    tracing::info!("lz_executor_address: {}", router_address);
+    tracing::info!("stargate_bridge_address: {}", router_address);
 
     let filter = Filter::new()
         .address(vec![
@@ -99,25 +107,6 @@ async fn process_log(
     save_log(db, chain, log.clone(), Context::Stream).await?;
 
     match log {
-        ExpectedLog::WithdrawRequest(log) => {
-            match operator::withdraw::withdraw_when_request(chain, wallet_client, log.inner.data)
-                .await
-            {
-                Ok(_) => {
-                    repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
-                        .await?;
-                }
-                Err(error) => {
-                    repositories::withdraw_request_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            };
-        }
         ExpectedLog::DepositFund(log) => {
             match operator::distribute::distribute_when_deposit(
                 chain,
@@ -188,6 +177,50 @@ async fn process_log(
                 }
                 Err(error) => {
                     repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_failed(
+                        db,
+                        tx_hash,
+                        log_index,
+                        format!("{:#?}", error),
+                    )
+                    .await?;
+                }
+            };
+        }
+        ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => {
+            match withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(
+                chain,
+                wallet_client,
+                log.inner.data,
+            )
+            .await
+            {
+                Ok(_) => {
+                    repositories::execute_receive_fund_cross_chain_failed_event::pin_as_resolved(
+                        db, tx_hash, log_index,
+                    )
+                    .await?;
+                }
+                Err(error) => {
+                    repositories::execute_receive_fund_cross_chain_failed_event::pin_as_failed(
+                        db,
+                        tx_hash,
+                        log_index,
+                        format!("{:#?}", error),
+                    )
+                    .await?;
+                }
+            }
+        }
+        ExpectedLog::WithdrawRequest(log) => {
+            match operator::withdraw::withdraw_when_request(chain, wallet_client, log.inner.data)
+                .await
+            {
+                Ok(_) => {
+                    repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
+                        .await?;
+                }
+                Err(error) => {
+                    repositories::withdraw_request_event::pin_as_failed(
                         db,
                         tx_hash,
                         log_index,

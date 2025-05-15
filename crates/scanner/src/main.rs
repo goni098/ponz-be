@@ -68,6 +68,12 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
 
     tracing::info!("🦀 starting scanner on {}...", chain);
 
+    tracing::info!("router_address: {}", router_address);
+    tracing::info!("cross_chain_router_address: {}", router_address);
+    tracing::info!("referral_address: {}", router_address);
+    tracing::info!("lz_executor_address: {}", router_address);
+    tracing::info!("stargate_bridge_address: {}", router_address);
+
     loop {
         match scan(chain, &client, &db, &mut filter).await {
             Ok(next) => {

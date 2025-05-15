@@ -10,15 +10,16 @@ use web3::contracts::{
 
 use crate::{
     entities::{
-        deposit_fund_event, execute_receive_fund_cross_chain_failed_event, pool,
-        rebalance_fund_same_chain_event, user, withdraw_fund_cross_chain_from_operator_event,
-        withdraw_request_event,
+        deposit_fund_event, distribute_user_fund_event,
+        execute_receive_fund_cross_chain_failed_event, pool, rebalance_fund_same_chain_event, user,
+        withdraw_fund_cross_chain_from_operator_event, withdraw_request_event,
     },
     utils::{to_signed_unit, to_unit},
 };
 
 pub type User = user::Model;
 pub type SupportedPool = pool::Model;
+pub type DistributeSanpshot = distribute_user_fund_event::Model;
 
 impl TryFrom<withdraw_request_event::Model> for WithdrawRequest {
     type Error = AppError;

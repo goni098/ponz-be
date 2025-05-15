@@ -80,8 +80,9 @@ pub async fn create(
     Ok(())
 }
 
-pub async fn find_all_unrebalanced_and_order_than_10days(
+pub async fn find_unrebalanced_and_order_than_10days(
     db: &DatabaseConnection,
+    limit: u64,
 ) -> Result<Vec<distribute_user_fund_event::Model>, DbErr> {
     let date = Utc::now()
         .checked_sub_days(Days::new(10))
@@ -90,19 +91,6 @@ pub async fn find_all_unrebalanced_and_order_than_10days(
     distribute_user_fund_event::Entity::find()
         .filter(distribute_user_fund_event::Column::RebalanceStatus.eq(TxnStatus::Pending))
         .filter(distribute_user_fund_event::Column::EmitAt.lte(date))
-        .all(db)
-        .await
-}
-
-pub async fn find_unresolved(
-    db: &DatabaseConnection,
-    limit: u64,
-) -> Result<Vec<distribute_user_fund_event::Model>, DbErr> {
-    distribute_user_fund_event::Entity::find()
-        .filter(
-            distribute_user_fund_event::Column::RebalanceStatus
-                .is_in([TxnStatus::Failed, TxnStatus::Pending]),
-        )
         .limit(limit)
         .order_by_desc(distribute_user_fund_event::Column::EmitAt)
         .all(db)

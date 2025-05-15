@@ -22,9 +22,9 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let pools_service = ExternalPoolsService::new();
 
     loop {
-        let _ = distribute::process(chain, &wallet_client, &db, &pools_service).await;
-        let _ = rebalance::process(chain, &wallet_client, &db).await;
-        let _ = withdraw::process(chain, &wallet_client, &db).await;
+        let _ = distribute::process_from_db(chain, &wallet_client, &db, &pools_service).await;
+        let _ = rebalance::process_from_db(chain, &wallet_client, &db).await;
+        let _ = withdraw::process_from_db(chain, &wallet_client, &db).await;
 
         tokio::time::sleep(Duration::from_secs(60)).await;
     }

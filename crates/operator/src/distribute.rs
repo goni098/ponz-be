@@ -28,7 +28,7 @@ use web3::{
     },
 };
 
-pub async fn process(
+pub async fn process_from_db(
     chain: NamedChain,
     wallet_client: &WalletClient,
     db: &DatabaseConnection,
