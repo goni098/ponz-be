@@ -207,9 +207,9 @@ async fn distribute_same_chain(
 }
 
 async fn distriute_cross_chain(
-    chain: NamedChain,
-    user: Address,
-    strategy: UserStrategyResult,
+    _chain: NamedChain,
+    _user: Address,
+    _strategy: UserStrategyResult,
 ) -> AppResult<()> {
     Ok(())
 }

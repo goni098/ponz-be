@@ -30,7 +30,7 @@ async fn main() {
     bootstrap(chain).await.unwrap();
 }
 
-const MAX_RANGE: u64 = 1;
+const MAX_RANGE: u64 = 312;
 
 async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let mut opt = ConnectOptions::new(&ENV.db_url);
@@ -63,7 +63,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
             lz_executor_address,
             stargate_bridge_address,
         ])
-        // .events(EXPECTED_EVENTS)
+        .events(EXPECTED_EVENTS)
         .from_block(BlockNumberOrTag::Number(current_scanned_block));
 
     tracing::info!("🦀 starting scanner on {}...", chain);
