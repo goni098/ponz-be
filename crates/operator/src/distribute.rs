@@ -15,7 +15,7 @@ use pools::{ExternalPoolInfo, ExternalPoolsService};
 use shared::{AppResult, env::ENV};
 use web3::{
     DynChain,
-    client::{WalletClient, public_client},
+    client::{get_public_client, get_wallet_client},
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator,
@@ -30,7 +30,6 @@ use web3::{
 
 pub async fn process_from_db(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     db: &DatabaseConnection,
     pools_service: &ExternalPoolsService,
 ) -> AppResult<()> {
@@ -48,7 +47,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = DepositFund::try_from(unresolved_event)?;
 
-        match distribute_when_deposit(chain, wallet_client, db, pools_service, event).await {
+        match distribute_when_deposit(chain, db, pools_service, event).await {
             Ok(_) => {
                 repositories::deposit_fund_event::pin_as_resolved(db, tx_hash, log_index).await?;
             }
@@ -69,7 +68,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = RebalanceFundSameChain::try_from(unresolved_event)?;
 
-        match distribute_when_rebalance(chain, wallet_client, db, pools_service, event).await {
+        match distribute_when_rebalance(chain, db, pools_service, event).await {
             Ok(_) => {
                 repositories::rebalance_fund_same_chain_event::pin_as_resolved(
                     db, tx_hash, log_index,
@@ -93,9 +92,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = WithdrawFundCrossChainFromOperator::try_from(unresolved_event)?;
 
-        match distribute_when_withdraw_from_operator(chain, wallet_client, db, pools_service, event)
-            .await
-        {
+        match distribute_when_withdraw_from_operator(chain, db, pools_service, event).await {
             Ok(_) => {
                 repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_resolved(
                     db, tx_hash, log_index,
@@ -119,27 +116,19 @@ pub async fn process_from_db(
 
 async fn distribute(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     db: &DatabaseConnection,
     pools_service: &ExternalPoolsService,
     user: Address,
     token_address: Address,
 ) -> AppResult<()> {
-    let strategies = calcualate_distribution_strategies(
-        chain,
-        wallet_client,
-        db,
-        pools_service,
-        user,
-        token_address,
-    )
-    .await?;
+    let strategies =
+        calcualate_distribution_strategies(chain, db, pools_service, user, token_address).await?;
 
     for strategy in strategies {
         if strategy.chain == chain {
-            distribute_same_chain(chain, wallet_client, user, strategy).await?;
+            distribute_same_chain(chain, user, strategy).await?;
         } else {
-            distriute_cross_chain(chain, wallet_client, user, strategy).await?;
+            distriute_cross_chain(chain, user, strategy).await?;
         }
     }
 
@@ -148,10 +137,10 @@ async fn distribute(
 
 async fn distribute_same_chain(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     user: Address,
     strategy: UserStrategyResult,
 ) -> AppResult<()> {
+    let wallet_client = get_wallet_client(chain).await;
     let router_contract_address = chain.router_contract_address();
     let router_contract = Router::new(router_contract_address, wallet_client);
 
@@ -219,21 +208,20 @@ async fn distribute_same_chain(
 
 async fn distriute_cross_chain(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     user: Address,
     strategy: UserStrategyResult,
 ) -> AppResult<()> {
     Ok(())
 }
 
-async fn calcualate_distribution_strategies<P: Provider>(
+async fn calcualate_distribution_strategies(
     chain: NamedChain,
-    client: P,
     db: &DatabaseConnection,
     pools_service: &ExternalPoolsService,
     user: Address,
     token_address: Address,
 ) -> AppResult<Vec<UserStrategyResult>> {
+    let client = get_public_client(chain).await;
     let supported_pools = repositories::pool::find_supported_pools(db).await?;
 
     let top_choices = pools_service.find_top_choices(&supported_pools).await?;
@@ -284,7 +272,7 @@ async fn get_user_pool_infos_on_top_choices(
 
     for pool in top_choices {
         let chain = pool.chain;
-        let client = public_client(chain);
+        let client = get_public_client(chain).await;
         let token_address = pool.token_address.parse()?;
         let strategy_contract_address = pool.strategy_address.parse()?;
         let strategy_contract = Strategy::new(strategy_contract_address, client);

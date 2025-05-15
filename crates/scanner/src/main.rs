@@ -20,7 +20,7 @@ use shared::{AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
     DynChain,
-    client::{PublicClient, public_client},
+    client::{PublicClient, create_public_client},
 };
 
 #[tokio::main]
@@ -37,7 +37,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
 
-    let client = public_client(chain);
+    let client = create_public_client(chain);
 
     let router_address = chain.router_contract_address();
     let cross_chain_router_address = chain.cross_chain_router_contract_address();

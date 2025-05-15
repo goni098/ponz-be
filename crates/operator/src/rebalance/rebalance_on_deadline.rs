@@ -4,7 +4,7 @@ use database::models;
 use shared::AppResult;
 use web3::{
     DynChain,
-    client::WalletClient,
+    client::get_wallet_client,
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         router::{Router, RouterCommonType::RebalanceStrategySameChain},
@@ -13,9 +13,9 @@ use web3::{
 
 pub async fn rebalance_on_deadline(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     snapshot: models::DistributeSanpshot,
 ) -> AppResult<()> {
+    let wallet_client = get_wallet_client(chain).await;
     let router_contract_address = chain.router_contract_address();
     let router_contract = Router::new(router_contract_address, wallet_client);
     let strategy_address = snapshot.strategy_address.parse()?;

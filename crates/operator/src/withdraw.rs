@@ -3,15 +3,12 @@ mod withdraw_when_request;
 
 use std::collections::HashMap;
 
-use alloy::{
-    primitives::{Address, U256},
-    providers::Provider,
-};
+use alloy::primitives::{Address, U256};
 use alloy_chains::NamedChain;
 use database::{repositories, sea_orm::DatabaseConnection};
 use shared::AppResult;
 use web3::{
-    client::WalletClient,
+    client::get_public_client,
     contracts::{
         cross_chain_router::RouterCommonType::WithdrawStrategySameChain,
         router::Router::WithdrawRequest,
@@ -21,11 +18,7 @@ use web3::{
 pub use withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed::*;
 pub use withdraw_when_request::*;
 
-pub async fn process_from_db(
-    chain: NamedChain,
-    wallet_client: &WalletClient,
-    db: &DatabaseConnection,
-) -> AppResult<()> {
+pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     let unresolved_withdraw_req_events =
         repositories::withdraw_request_event::find_unresolved(db, 1).await?;
     let unresolved_execute_receive_fund_cross_chain_failed_events =
@@ -36,7 +29,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = WithdrawRequest::try_from(unresolved_event)?;
 
-        match withdraw_when_request(chain, wallet_client, event).await {
+        match withdraw_when_request(chain, event).await {
             Ok(_) => {
                 repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
                     .await?;
@@ -58,12 +51,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = ExecuteReceiveFundCrossChainFailed::try_from(unresolved_event)?;
 
-        match withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(
-            chain,
-            wallet_client,
-            event,
-        )
-        .await
+        match withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(chain, event).await
         {
             Ok(_) => {
                 repositories::execute_receive_fund_cross_chain_failed_event::pin_as_resolved(
@@ -94,10 +82,11 @@ pub struct TokenAsset {
     pub withdraw_strategy_same_chains: Vec<WithdrawStrategySameChain>,
 }
 
-pub async fn merge_tokens_from_withdraw_request<P: Provider>(
-    client: P,
+pub async fn merge_tokens_from_withdraw_request(
+    chain: NamedChain,
     event: &WithdrawRequest,
 ) -> AppResult<HashMap<Address, TokenAsset>> {
+    let client = get_public_client(chain).await;
     let mut strategy_contract = Strategy::new(Address::ZERO, client);
 
     let mut tokens: HashMap<Address, TokenAsset> = HashMap::new();

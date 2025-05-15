@@ -8,7 +8,7 @@ use addresses::{
         SEPOLIA_ROUTER_CONTRACT_ADDRESS,
     },
 };
-use alloy::{network::EthereumWallet, primitives::Address};
+use alloy::primitives::Address;
 use alloy_chains::NamedChain;
 use shared::env::ENV;
 use url::Url;
@@ -33,7 +33,7 @@ pub trait DynChain {
     fn stargate_bridge_address(&self) -> Address;
     fn lz_executor_address(&self) -> Address;
     fn chain_link_data_feed_address(&self) -> Address;
-    fn operator_wallet(&self) -> EthereumWallet;
+    fn supported_chains() -> [NamedChain; 4];
 }
 
 impl DynChain for NamedChain {
@@ -97,7 +97,12 @@ impl DynChain for NamedChain {
         Address::ZERO
     }
 
-    fn operator_wallet(&self) -> EthereumWallet {
-        EthereumWallet::default()
+    fn supported_chains() -> [NamedChain; 4] {
+        [
+            NamedChain::Base,
+            NamedChain::Arbitrum,
+            NamedChain::Sepolia,
+            NamedChain::ArbitrumSepolia,
+        ]
     }
 }

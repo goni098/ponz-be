@@ -17,10 +17,7 @@ use scanner::{
     log_handlers::{Context, save_log},
 };
 use shared::{AppResult, env::ENV};
-use web3::{
-    DynChain,
-    client::{WalletClient, wallet_client, ws_client},
-};
+use web3::{DynChain, client::create_ws_client};
 
 #[tokio::main]
 async fn main() {
@@ -48,7 +45,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
 }
 
 async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
-    let ws_client = ws_client(chain).await?;
+    let ws_client = create_ws_client(chain).await?;
 
     let router_address = chain.router_contract_address();
     let cross_chain_router_address = chain.cross_chain_router_contract_address();
@@ -73,11 +70,10 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
         .events(EXPECTED_EVENTS);
 
     let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
-    let wallet_client = wallet_client(chain);
     let pools_service = ExternalPoolsService::new();
 
     while let Some(log) = stream.next().await {
-        match process_log(chain, &wallet_client, db, &pools_service, log).await {
+        match process_log(chain, db, &pools_service, log).await {
             Ok(tx_hash) => {
                 tracing::info!("handled log {}", tx_hash);
             }
@@ -92,7 +88,6 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
 
 async fn process_log(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     db: &DatabaseConnection,
     pools_service: &ExternalPoolsService,
     log: Log,
@@ -110,7 +105,6 @@ async fn process_log(
         ExpectedLog::DepositFund(log) => {
             match operator::distribute::distribute_when_deposit(
                 chain,
-                wallet_client,
                 db,
                 pools_service,
                 log.inner.data,
@@ -135,7 +129,6 @@ async fn process_log(
         ExpectedLog::RebalanceFundSameChain(log) => {
             match operator::distribute::distribute_when_rebalance(
                 chain,
-                wallet_client,
                 db,
                 pools_service,
                 log.inner.data,
@@ -162,7 +155,6 @@ async fn process_log(
         ExpectedLog::WithdrawFundCrossChainFromOperator(log) => {
             match operator::distribute::distribute_when_withdraw_from_operator(
                 chain,
-                wallet_client,
                 db,
                 pools_service,
                 log.inner.data,
@@ -189,7 +181,6 @@ async fn process_log(
         ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => {
             match withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(
                 chain,
-                wallet_client,
                 log.inner.data,
             )
             .await
@@ -212,9 +203,7 @@ async fn process_log(
             }
         }
         ExpectedLog::WithdrawRequest(log) => {
-            match operator::withdraw::withdraw_when_request(chain, wallet_client, log.inner.data)
-                .await
-            {
+            match operator::withdraw::withdraw_when_request(chain, log.inner.data).await {
                 Ok(_) => {
                     repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
                         .await?;

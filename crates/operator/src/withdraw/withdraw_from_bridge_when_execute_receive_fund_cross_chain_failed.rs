@@ -3,7 +3,7 @@ use alloy_chains::NamedChain;
 use shared::AppResult;
 use web3::{
     DynChain,
-    client::WalletClient,
+    client::get_wallet_client,
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         stargate_bridge::StargateBridge::{self, ExecuteReceiveFundCrossChainFailed},
@@ -12,9 +12,9 @@ use web3::{
 
 pub async fn withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(
     chain: NamedChain,
-    wallet_client: &WalletClient,
     event: ExecuteReceiveFundCrossChainFailed,
 ) -> AppResult<()> {
+    let wallet_client = get_wallet_client(chain).await;
     let stargate_contract_address = chain.stargate_bridge_address();
     let stargate_contract = StargateBridge::new(stargate_contract_address, wallet_client);
 

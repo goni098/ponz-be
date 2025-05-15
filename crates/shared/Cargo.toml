@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+tokio = { workspace = true }
+
 thiserror = { workspace = true }
 
 sea-orm = { workspace = true }
@@ -22,4 +24,7 @@ url = { workspace = true }
 
 reqwest = { workspace = true }
 
+serde = { workspace = true }
 serde_json = { workspace = true }
+
+aws_secretsmanager_caching = { workspace = true }

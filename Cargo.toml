@@ -54,6 +54,7 @@ redis = { version = "0.31.0", features = ["tokio-comp"] }
 # random
 rand = { version = "0.9.0" }
 
+# evm client
 alloy = { version = "1.0.1", features = ["provider-ws"] }
 alloy-chains = { version = "0.2.0" }
 
@@ -63,3 +64,6 @@ strum = { version = "0.27.1" }
 # http client
 url = { version = "2.5.4" }
 reqwest = { version = "0.12.15", features = ["json"] }
+
+# aws ksm
+aws_secretsmanager_caching = { version = "1.0.0" }
