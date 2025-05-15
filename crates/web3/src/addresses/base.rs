@@ -11,3 +11,5 @@ pub const REFERRAL: Address = address!("0x39a18374B0357572E23c17F3057a2B0D8ed684
 pub const STARGATE_BRIGDE: Address = address!("0xE7C33CB97428C258E9637b2449368F13a5B6bACC");
 
 pub const LZ_EXECUTOR: Address = address!("0x2CCA08ae69E0C44b18a57Ab2A87644234dAebaE4");
+
+pub const CHAIN_LINK: Address = address!("0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70");

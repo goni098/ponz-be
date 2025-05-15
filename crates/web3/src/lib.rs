@@ -125,7 +125,16 @@ impl DynChain for NamedChain {
     }
 
     fn chain_link_data_feed_address(&self) -> Address {
-        Address::ZERO
+        match self {
+            NamedChain::Base => base::CHAIN_LINK,
+            NamedChain::Arbitrum => arbitrum::CHAIN_LINK,
+            NamedChain::Sepolia => sepolia::CHAIN_LINK,
+            NamedChain::ArbitrumSepolia => arb_sepolia::CHAIN_LINK,
+            _ => panic!(
+                "can not resolve chain_link_data_feed_address, unsupported chain {}",
+                self
+            ),
+        }
     }
 
     fn supported_chains() -> [NamedChain; 4] {

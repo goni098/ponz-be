@@ -83,6 +83,7 @@ mod test {
 
     use crate::allbridge::fetch_pools_info;
 
+    // cargo test --package pools --lib -- allbridge::test::test_fetching_allbridge_pools --exact --show-output
     #[tokio::test]
     async fn test_fetching_allbridge_pools() -> AppResult<()> {
         let client = reqwest::Client::new();

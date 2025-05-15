@@ -75,8 +75,7 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
     let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
     let gas_price = wallet_client.get_gas_price().await?;
 
-    let withdraw_fee =
-        connvert_eth_to_usd(chain, &wallet_client, U256::from(gas * gas_price)).await?;
+    let withdraw_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
 
     let pending_tx = cross_router_contract
         .withdrawFundSameChain(
@@ -170,7 +169,6 @@ async fn withdraw_cross_chain(
 
     let withdraw_fee = connvert_eth_to_usd(
         dst_chain,
-        &src_wallet_client,
         U256::from(U256::from(gas * gas_price) + total_value_to_send),
     )
     .await?;

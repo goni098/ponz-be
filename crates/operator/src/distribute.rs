@@ -166,8 +166,7 @@ async fn distribute_same_chain(
     let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
     let gas_price = wallet_client.get_gas_price().await?;
 
-    let distribution_fee =
-        connvert_eth_to_usd(chain, &wallet_client, U256::from(gas * gas_price)).await?;
+    let distribution_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
 
     let pending_tx = router_contract
         .depositFundToStrategySameChainFromOperator(

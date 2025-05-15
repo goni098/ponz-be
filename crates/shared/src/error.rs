@@ -1,5 +1,6 @@
 use alloy::{
     hex::FromHexError,
+    primitives::BigIntConversionError,
     providers::PendingTransactionError,
     transports::{RpcError, TransportErrorKind},
 };
@@ -56,4 +57,7 @@ pub enum AppError {
 
     #[error(transparent)]
     ParseFloat(#[from] ParseFloatError),
+
+    #[error(transparent)]
+    BigIntConversion(#[from] BigIntConversionError),
 }
