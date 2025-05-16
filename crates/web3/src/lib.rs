@@ -30,9 +30,11 @@ pub trait DynChain {
 impl DynChain for NamedChain {
     fn ws_url(&self) -> &Url {
         match self {
-            NamedChain::Sepolia => &ENV.sepolia_rpc_url,
-            NamedChain::Base => &ENV.base_rpc_url,
-            _ => panic!("unsupported chain {}", self),
+            NamedChain::Base => &ENV.base_ws_url,
+            NamedChain::Arbitrum => &ENV.arbitrum_ws_url,
+            NamedChain::Sepolia => &ENV.sepolia_ws_url,
+            NamedChain::ArbitrumSepolia => &ENV.arbitrum_ws_url,
+            _ => panic!("can not resolve rpc_url, unsupported chain {}", self),
         }
     }
 

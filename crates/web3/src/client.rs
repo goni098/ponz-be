@@ -93,6 +93,7 @@ pub async fn get_wallet_client(chain: NamedChain) -> &'static WalletClient {
 
 pub async fn create_ws_client(chain: NamedChain) -> AppResult<RootProvider> {
     let ws = WsConnect::new(chain.ws_url().as_str());
+
     let provider = ProviderBuilder::new()
         .disable_recommended_fillers()
         .connect_ws(ws)
