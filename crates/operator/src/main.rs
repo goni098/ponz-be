@@ -8,7 +8,7 @@ use shared::{AppResult, env::ENV};
 
 #[tokio::main]
 async fn main() {
-    shared::logging::set_up("operator");
+    shared::logging::set_up(["operator"]);
     let chain = shared::arg::parse_chain_arg();
     bootstrap(chain).await.unwrap();
 }

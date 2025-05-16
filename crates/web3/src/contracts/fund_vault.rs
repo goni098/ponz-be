@@ -1,6 +1,6 @@
 use alloy::sol;
 
-use crate::client::PublicClient;
+use crate::clients::PublicClient;
 
 sol!(
     #[allow(missing_docs)]

@@ -55,7 +55,6 @@ pub async fn fetch_pools_info(
 struct Token {
     name: String,
     pool_address: String,
-    token_address: String,
     pool_info: PoolInfo,
     apr: String,
     apr7d: String,
@@ -91,7 +90,7 @@ mod test {
                 SupportedPool {
                     name: "USD Coin".to_string(),
                     address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
-                    token_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string(),
+                    token_address: "0xF3F2b4815A58152c9BE53250275e8211163268BA".to_string(),
                     chain_id: 8453,
                     enable: true,
                     id: 1,

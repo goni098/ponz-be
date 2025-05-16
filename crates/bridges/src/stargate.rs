@@ -3,7 +3,7 @@ use alloy_chains::NamedChain;
 use shared::{AppResult, util::CheckedPercent};
 use web3::{
     DynChain,
-    client::get_public_client,
+    clients::get_public_client,
     contracts::stargate_bridge::StargateBridge::{self, prepareForTransportReturn},
 };
 

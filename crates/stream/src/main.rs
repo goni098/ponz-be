@@ -11,17 +11,18 @@ use database::{
 use futures_util::StreamExt;
 use operator::withdraw::withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed;
 use pools::ExternalPoolsService;
-use scanner::{
-    EXPECTED_EVENTS, ExpectedLog,
-    decode_log::{self},
-    log_handlers::{Context, save_log},
-};
+use scanner::handlers::{Context, save_log};
 use shared::{AppResult, env::ENV};
-use web3::{DynChain, client::create_ws_client};
+use web3::{
+    DynChain,
+    clients::create_ws_client,
+    events::EXPECTED_EVENTS,
+    logs::{ExpectedLog, decoder::decode_log},
+};
 
 #[tokio::main]
 async fn main() {
-    shared::logging::set_up("stream");
+    shared::logging::set_up(["stream", "operator"]);
     let chain = shared::arg::parse_chain_arg();
     bootstrap(chain).await.unwrap();
 }
@@ -75,7 +76,7 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     while let Some(log) = stream.next().await {
         match process_log(chain, db, &pools_service, log).await {
             Ok(tx_hash) => {
-                tracing::info!("handled log {}", tx_hash);
+                tracing::info!("solved log {}", tx_hash);
             }
             Err(error) => {
                 tracing::error!("process log error: {:#?}", error);
@@ -95,7 +96,7 @@ async fn process_log(
     let tx_hash = log.transaction_hash.unwrap_or_default();
     let log_index = log.log_index.unwrap_or_default();
 
-    let Some(log) = decode_log::decode_log(log)? else {
+    let Some(log) = decode_log(log)? else {
         return Ok(tx_hash);
     };
 
@@ -115,6 +116,8 @@ async fn process_log(
                         .await?;
                 }
                 Err(error) => {
+                    tracing::error!("distribute_when_deposit error: {:#?}", error);
+
                     repositories::deposit_fund_event::pin_as_failed(
                         db,
                         tx_hash,

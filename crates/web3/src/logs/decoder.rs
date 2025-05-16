@@ -1,6 +1,4 @@
-use alloy::{rpc::types::Log, sol_types::SolEvent};
-use shared::AppResult;
-use web3::contracts::{
+use crate::contracts::{
     cross_chain_router::CrossChainRouter::{
         TransferFundCrossChain, WithdrawFundCrossChainFromOperator,
     },
@@ -14,8 +12,10 @@ use web3::contracts::{
     },
     stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed,
 };
+use alloy::{rpc::types::Log, sol_types::SolEvent};
+use shared::AppResult;
 
-use crate::ExpectedLog;
+use super::ExpectedLog;
 
 pub fn decode_log(log: Log) -> AppResult<Option<ExpectedLog>> {
     let log = match log.topic0() {

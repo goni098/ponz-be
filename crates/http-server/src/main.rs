@@ -10,7 +10,7 @@ mod routers;
 
 #[tokio::main]
 async fn main() -> AppResult<()> {
-    shared::logging::set_up("http_server=debug");
+    shared::logging::set_up(["http_server=debug"]);
 
     let state = AppState::new().await?;
 

@@ -3,7 +3,7 @@ use alloy_chains::NamedChain;
 use shared::AppResult;
 use web3::{
     DynChain,
-    client::get_wallet_client,
+    clients::get_wallet_client,
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         stargate_bridge::StargateBridge::{self, ExecuteReceiveFundCrossChainFailed},

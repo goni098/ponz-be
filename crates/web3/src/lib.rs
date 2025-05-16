@@ -5,8 +5,10 @@ use shared::env::ENV;
 use url::Url;
 
 pub mod addresses;
-pub mod client;
+pub mod clients;
 pub mod contracts;
+pub mod events;
+pub mod logs;
 
 pub enum StrategyPool {
     Balancer,

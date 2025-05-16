@@ -4,7 +4,7 @@ use alloy::primitives::{Address, U256};
 use alloy_chains::NamedChain;
 use shared::{AppResult, util::to_chain};
 use web3::{
-    client::get_public_client,
+    clients::get_public_client,
     contracts::{
         cross_chain_router::RouterCommonType::WithdrawStrategySameChain,
         router::Router::WithdrawRequest, strategy::Strategy,

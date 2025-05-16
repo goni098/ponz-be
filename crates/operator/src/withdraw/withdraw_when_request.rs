@@ -7,7 +7,7 @@ use database::{repositories, sea_orm::DatabaseConnection};
 use shared::{AppResult, util::to_chain};
 use web3::{
     DynChain,
-    client::get_wallet_client,
+    clients::get_wallet_client,
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         cross_chain_router::{

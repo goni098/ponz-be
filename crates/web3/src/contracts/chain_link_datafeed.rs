@@ -4,7 +4,7 @@ use shared::{AppError, AppResult};
 
 use crate::{
     DynChain,
-    client::{PublicClient, get_public_client},
+    clients::{PublicClient, get_public_client},
 };
 
 sol!(

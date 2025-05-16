@@ -1,6 +1,6 @@
 use alloy::sol;
 
-use crate::client::PublicClient;
+use crate::clients::PublicClient;
 
 sol!(
     #![sol(extra_derives(serde::Serialize, serde::Deserialize))]

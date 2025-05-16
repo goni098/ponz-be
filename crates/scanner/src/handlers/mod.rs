@@ -1,9 +1,3 @@
-use alloy_chains::NamedChain;
-use database::sea_orm::DatabaseConnection;
-use shared::AppResult;
-
-use crate::ExpectedLog;
-
 mod claim;
 mod deposit_fund;
 mod distribute_fund_cross_chain;
@@ -16,6 +10,12 @@ mod transfer_fund_from_router_to_vault_cross_chain;
 mod withdraw_fund_cross_chain_from_operator;
 mod withdraw_fund_same_chain;
 mod withdraw_request;
+
+use alloy_chains::NamedChain;
+use database::sea_orm::DatabaseConnection;
+use shared::AppResult;
+use web3::logs::ExpectedLog;
+
 pub enum Context {
     Stream,
     Scanner,

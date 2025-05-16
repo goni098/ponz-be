@@ -1,13 +1,13 @@
 use alloy::{
     primitives::{Address, Bytes, U256},
-    providers::Provider,
+    providers::{Provider, WalletProvider},
 };
 use alloy_chains::NamedChain;
 use pools::{ExternalPoolInfo, ExternalPoolsService};
 use shared::{AppResult, env::ENV};
 use web3::{
     DynChain,
-    client::{get_public_client, get_wallet_client},
+    clients::{get_public_client, get_wallet_client},
     contracts::{
         chain_link_datafeed::connvert_eth_to_usd,
         fund_vault::FundVault,
@@ -29,10 +29,7 @@ pub async fn distribute(
         calcualate_distribution_strategies(chain, pools_service, user, token_address).await?;
 
     for strategy in strategies {
-        dbg!(strategy.chain);
-        dbg!(chain);
         if strategy.chain == chain {
-            dbg!("distribute samechain");
             distribute_same_chain(chain, user, strategy).await?;
         } else {
             distriute_cross_chain(chain, user, strategy).await?;
@@ -47,12 +44,12 @@ async fn distribute_same_chain(
     user: Address,
     strategy: UserStrategyResult,
 ) -> AppResult<()> {
-    dbg!("start distribute same chain");
+    tracing::debug!("processing distribute same chain...");
+    tracing::debug!("strategy: {:#?}", strategy);
+
     let wallet_client = get_wallet_client(chain).await;
     let router_contract_address = chain.router_contract_address();
     let router_contract = Router::new(router_contract_address, wallet_client);
-
-    dbg!(wallet_client);
 
     let tx_to_et = router_contract
         .depositFundToStrategySameChainFromOperator(
@@ -71,17 +68,16 @@ async fn distribute_same_chain(
                 swapContract: Address::ZERO,
             },
         )
+        .from(wallet_client.default_signer_address())
         .into_transaction_request();
 
-    dbg!(wallet_client.get_accounts().await?);
-
     let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
-    dbg!(gas);
 
     let gas_price = wallet_client.get_gas_price().await?;
-    dbg!(gas_price);
 
     let distribution_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
+
+    tracing::debug!("distribution_fee {:#?}", distribution_fee);
 
     let pending_tx = router_contract
         .depositFundToStrategySameChainFromOperator(
@@ -110,8 +106,6 @@ async fn distribute_same_chain(
         tx_hash
     );
 
-    pending_tx.watch().await?;
-
     tracing::info!(
         "Execute depositFundToStrategySameChainFromOperator transaction successfully {}",
         tx_hash
@@ -138,7 +132,7 @@ async fn calcualate_distribution_strategies(
 
     let top_choices = pools_service.find_top_choices().await?;
 
-    dbg!(&top_choices);
+    tracing::debug!("top_choices {:#?}", top_choices);
     let user_pool_infos = get_user_pool_infos_on_top_choices(user, &top_choices).await?;
 
     let fund_vault_contract_address = chain.fund_vault_contract_address();
@@ -155,8 +149,7 @@ async fn calcualate_distribution_strategies(
 
     let mut result = vec![];
 
-    dbg!(available_vault_amount);
-    dbg!(distribute_min);
+    tracing::debug!("available_vault_amount: {}", available_vault_amount);
 
     for (target_pool, current_user_pool_info) in top_choices.iter().zip(user_pool_infos) {
         if available_vault_amount < distribute_min {
@@ -172,13 +165,11 @@ async fn calcualate_distribution_strategies(
             chain: target_pool.chain,
             deposit_needed_amount,
             strategy_address: current_user_pool_info.strategy_address,
-            token_address: current_user_pool_info.strategy_address,
+            token_address: current_user_pool_info.token_address,
         });
 
         available_vault_amount -= deposit_needed_amount;
     }
-
-    dbg!(&result);
 
     Ok(result)
 }
@@ -204,6 +195,7 @@ async fn get_user_pool_infos_on_top_choices(
         user_pools.push(UserPoolInfo {
             amount: strategy_amount,
             strategy_address: strategy_contract_address,
+            token_address,
         });
     }
 
@@ -213,6 +205,7 @@ async fn get_user_pool_infos_on_top_choices(
 struct UserPoolInfo {
     amount: U256,
     strategy_address: Address,
+    token_address: Address,
 }
 
 #[derive(Debug)]

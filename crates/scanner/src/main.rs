@@ -11,21 +11,19 @@ use database::{
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
 use futures_util::future::try_join_all;
-use scanner::{
-    EXPECTED_EVENTS,
-    decode_log::decode_log,
-    log_handlers::{self, Context},
-};
+use scanner::handlers::{Context, save_log};
 use shared::{AppResult, env::ENV};
 use tokio::time::sleep;
 use web3::{
     DynChain,
-    client::{PublicClient, create_public_client},
+    clients::{PublicClient, create_public_client},
+    events::EXPECTED_EVENTS,
+    logs::decoder::decode_log,
 };
 
 #[tokio::main]
 async fn main() {
-    shared::logging::set_up("scanner");
+    shared::logging::set_up(["scanner"]);
     let chain = shared::arg::parse_chain_arg();
     bootstrap(chain).await.unwrap();
 }
@@ -114,7 +112,7 @@ async fn scan(
 
     for log in logs {
         if let Some(log) = decode_log(log)? {
-            tasks.push(log_handlers::save_log(db, chain, log, Context::Scanner));
+            tasks.push(save_log(db, chain, log, Context::Scanner));
         };
     }
 
