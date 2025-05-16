@@ -103,10 +103,77 @@ impl TryFrom<execute_receive_fund_cross_chain_failed_event::Model>
         Ok(event)
     }
 }
-// #[cfg(test)]
-// mod test {
-//     use crate::entities::withdraw_request_event;
+#[cfg(test)]
+mod test {
 
-//     #[test]
-//     fn convert_withdraw_request_event() {}
-// }
+    use sea_orm::prelude::{DateTimeWithTimeZone, Decimal};
+    use serde_json::json;
+    use web3::contracts::router::Router::{DepositFund, WithdrawRequest};
+
+    use crate::{
+        entities::{deposit_fund_event, withdraw_request_event},
+        enums::TxnStatus,
+    };
+
+    // cargo test --package database --lib -- models::test::convert_withdraw_request_event --exact --show-output
+    #[test]
+    fn convert_withdraw_request_event() {
+        let model = withdraw_request_event::Model {
+            chain_id: 8453,
+            emit_at: DateTimeWithTimeZone::default(),
+            id: 1,
+            log_index: 164,
+            status: TxnStatus::Pending,
+            smf_error_msg: None,
+            token_out: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string(),
+            tx_hash: "0x494f26cdf774d9d1201a1156f38920c163b9c5aefc5314351e6086d465f57006"
+                .to_string(),
+            args: json!({
+                "user": "0xe6112c5c057da3e9a04b7c45ee73b68f32f941a9",
+                "chainId": "0xa4b1",
+                "tokenOut": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+                "requestedAt": "0x68254727",
+                "unDistributedWithdraw": [
+                    {
+                    "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+                    "unDistributedAmount": "0xf43b5"
+                    }
+                ],
+                "withdrawStrategySameChains": []
+            }),
+        };
+
+        let event = WithdrawRequest::try_from(model);
+
+        assert!(event.is_ok());
+        dbg!(event.unwrap());
+    }
+
+    // cargo test --package database --lib -- models::test::convert_deposit_fund_event --exact --show-output
+    #[test]
+    fn convert_deposit_fund_event() {
+        let model = deposit_fund_event::Model {
+            id: 1,
+            chain_id: 8453,
+            emit_at: DateTimeWithTimeZone::parse_from_str(
+                "2025-05-13 02:42:33+0700",
+                "%Y-%m-%d %H:%M:%S%z",
+            )
+            .unwrap(),
+            log_index: 6,
+            tx_hash: "0x409c68de4444f162461cefe08224a75cd16251a37129fbb55abc09abc9330088"
+                .to_string(),
+            actual_deposit_amount: Decimal::new(2000000, 0),
+            deposit_amount: Decimal::new(2000000, 0),
+            distribute_status: TxnStatus::Pending,
+            smf_error_msg: None,
+            receiver: "0x0D3E7FaacF6E3EaD3121Afc8f9C6f8f4245C1627".to_string(),
+            token_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string(),
+        };
+
+        let event = DepositFund::try_from(model);
+
+        assert!(event.is_ok());
+        dbg!(event.unwrap());
+    }
+}

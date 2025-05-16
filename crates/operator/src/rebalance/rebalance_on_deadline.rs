@@ -1,6 +1,6 @@
 use alloy::{primitives::ruint::aliases::U256, providers::Provider};
 use alloy_chains::NamedChain;
-use database::models;
+use database::{models, repositories, sea_orm::DatabaseConnection};
 use shared::AppResult;
 use web3::{
     DynChain,
@@ -13,6 +13,7 @@ use web3::{
 
 pub async fn rebalance_on_deadline(
     chain: NamedChain,
+    db: &DatabaseConnection,
     snapshot: models::DistributeSanpshot,
 ) -> AppResult<()> {
     let wallet_client = get_wallet_client(chain).await;
@@ -20,10 +21,11 @@ pub async fn rebalance_on_deadline(
     let router_contract = Router::new(router_contract_address, wallet_client);
     let strategy_address = snapshot.strategy_address.parse()?;
     let user_address = snapshot.depositor.parse()?;
+    let is_refferal = repositories::user::is_refferal_user(db, user_address).await?;
 
     let tx_to_et = router_contract
         .rebalanceFundSameChain(RebalanceStrategySameChain {
-            isReferral: false,
+            isReferral: is_refferal,
             rebalancesFee: U256::ZERO,
             strategyAddress: strategy_address,
             userAddress: user_address,
@@ -37,7 +39,7 @@ pub async fn rebalance_on_deadline(
 
     let pending_tx = router_contract
         .rebalanceFundSameChain(RebalanceStrategySameChain {
-            isReferral: false,
+            isReferral: is_refferal,
             rebalancesFee: rebalance_fee,
             strategyAddress: strategy_address,
             userAddress: user_address,

@@ -203,7 +203,7 @@ async fn process_log(
             }
         }
         ExpectedLog::WithdrawRequest(log) => {
-            match operator::withdraw::withdraw_when_request(chain, log.inner.data).await {
+            match operator::withdraw::withdraw_when_request(chain, db, log.inner.data).await {
                 Ok(_) => {
                     repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
                         .await?;

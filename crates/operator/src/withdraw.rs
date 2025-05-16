@@ -29,7 +29,7 @@ pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppR
         let log_index = unresolved_event.log_index as u64;
         let event = WithdrawRequest::try_from(unresolved_event)?;
 
-        match withdraw_when_request(chain, event).await {
+        match withdraw_when_request(chain, db, event).await {
             Ok(_) => {
                 repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
                     .await?;

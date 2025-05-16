@@ -9,6 +9,7 @@ use database::{
     sea_orm::{DatabaseConnection, DbErr},
 };
 use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use rand::{Rng, distr::Alphanumeric};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use shared::env::ENV;
@@ -25,6 +26,7 @@ use crate::{
 pub struct Payload {
     message: String,
     signature: String,
+    ref_by: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -38,7 +40,11 @@ pub async fn handler(
     Redis(mut redis): Redis,
     Json(payload): Json<Payload>,
 ) -> HttpResult<Json<Tokens>> {
-    let Payload { message, signature } = payload;
+    let Payload {
+        message,
+        signature,
+        ref_by,
+    } = payload;
 
     let signature = Signature::from_str(&signature)
         .map_err(|_| HttpException::Unauthorized("Invalid signature".into()))?;
@@ -58,7 +64,29 @@ pub async fn handler(
         return Err(HttpException::Unauthorized("Invalid messgage".into()));
     }
 
-    let user = user::create_if_not_exist(&db, address).await?;
+    if let Some(ref_by) = ref_by.as_ref() {
+        let is_invalid_ref_by = user::find_by_ref_code(&db, ref_by).await?.is_none();
+
+        if is_invalid_ref_by {
+            return Err(HttpException::BadRequest("Invalid refby".into()));
+        }
+    }
+
+    let ref_code = loop {
+        let ref_code: String = rand::rng()
+            .sample_iter(&Alphanumeric)
+            .take(12)
+            .map(char::from)
+            .collect();
+
+        let is_not_existed = user::find_by_ref_code(&db, &ref_code).await?.is_none();
+
+        if is_not_existed {
+            break ref_code;
+        }
+    };
+
+    let user = user::create_if_not_exist(&db, address, ref_code, ref_by).await?;
 
     let tokens = Tokens::sign_from(&user)?;
 

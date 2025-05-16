@@ -3,6 +3,7 @@ use alloy::{
     providers::Provider,
 };
 use alloy_chains::NamedChain;
+use database::{repositories, sea_orm::DatabaseConnection};
 use shared::{AppError, AppResult};
 use web3::{
     DynChain,
@@ -23,7 +24,11 @@ use web3::{
 
 use crate::{bridges::stargate, withdraw::merge_tokens_from_withdraw_request};
 
-pub async fn withdraw_when_request(dst_chain: NamedChain, event: WithdrawRequest) -> AppResult<()> {
+pub async fn withdraw_when_request(
+    dst_chain: NamedChain,
+    db: &DatabaseConnection,
+    event: WithdrawRequest,
+) -> AppResult<()> {
     let src_chain: NamedChain = event
         .chainId
         .to::<u64>()
@@ -31,18 +36,24 @@ pub async fn withdraw_when_request(dst_chain: NamedChain, event: WithdrawRequest
         .map_err(|_| AppError::Custom("Invalid chain id from WithdrawRequest event".into()))?;
 
     if src_chain == dst_chain {
-        withdraw_same_chain(src_chain, event).await
+        withdraw_same_chain(src_chain, db, event).await
     } else {
-        withdraw_cross_chain(dst_chain, src_chain, event).await
+        withdraw_cross_chain(dst_chain, src_chain, db, event).await
     }
 }
 
-async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppResult<()> {
+async fn withdraw_same_chain(
+    chain: NamedChain,
+    db: &DatabaseConnection,
+    event: WithdrawRequest,
+) -> AppResult<()> {
     let wallet_client = get_wallet_client(chain).await;
     let cross_router_contract =
         CrossChainRouter::new(chain.cross_chain_router_contract_address(), &wallet_client);
 
     let tokens = merge_tokens_from_withdraw_request(chain, &event).await?;
+
+    let is_refferal = repositories::user::is_refferal_user(db, event.user).await?;
 
     let withdraw_same_chain_from_operators: Vec<WithdrawSameChainFromOperator> = tokens
         .into_iter()
@@ -67,7 +78,7 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
         .withdrawFundSameChain(
             withdraw_same_chain_from_operators.clone(),
             event.user,
-            false,
+            is_refferal,
             U256::ZERO,
         )
         .into_transaction_request();
@@ -81,7 +92,7 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
         .withdrawFundSameChain(
             withdraw_same_chain_from_operators,
             event.user,
-            false,
+            is_refferal,
             withdraw_fee,
         )
         .send()
@@ -107,6 +118,7 @@ async fn withdraw_same_chain(chain: NamedChain, event: WithdrawRequest) -> AppRe
 async fn withdraw_cross_chain(
     dst_chain: NamedChain,
     src_chain: NamedChain,
+    db: &DatabaseConnection,
     event: WithdrawRequest,
 ) -> AppResult<()> {
     let src_wallet_client = get_wallet_client(src_chain).await;
@@ -130,6 +142,8 @@ async fn withdraw_cross_chain(
     let total_value_to_send = tokens
         .iter()
         .fold(U256::ZERO, |value, (_, asset)| asset.native_value + value);
+
+    let is_refferal = repositories::user::is_refferal_user(db, event.user).await?;
 
     let withdraw_strategy_multiple_chains_v2: Vec<WithdrawStrategyMultipleChainsV2> = tokens
         .into_iter()
@@ -158,7 +172,7 @@ async fn withdraw_cross_chain(
         .withdrawFundAnotherChain(
             withdraw_strategy_multiple_chains_v2.clone(),
             event.user,
-            false,
+            is_refferal,
             U256::ZERO,
         )
         .value(total_value_to_send)
@@ -177,7 +191,7 @@ async fn withdraw_cross_chain(
         .withdrawFundAnotherChain(
             withdraw_strategy_multiple_chains_v2,
             event.user,
-            false,
+            is_refferal,
             withdraw_fee,
         )
         .value(total_value_to_send)

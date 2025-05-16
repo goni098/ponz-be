@@ -14,7 +14,7 @@ pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppR
         let tx_hash = snapshot.tx_hash.clone();
         let log_index = snapshot.log_index as u64;
 
-        match rebalance_on_deadline(chain, snapshot).await {
+        match rebalance_on_deadline(chain, db, snapshot).await {
             Ok(_) => {
                 repositories::distribute_user_fund_event::pin_as_resolved(db, tx_hash, log_index)
                     .await?;
