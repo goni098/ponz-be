@@ -33,9 +33,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
 
     loop {
         match stream(chain, &db).await {
-            Ok(_) => {
-                tracing::info!("🦀 stream is running on {}", chain);
-            }
+            Ok(_) => {}
             Err(error) => {
                 tracing::error!("websocket has disconnected: {:#?}", error);
                 tracing::info!("reconnecting...");
@@ -71,6 +69,8 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
 
     let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
     let pools_service = ExternalPoolsService::new();
+
+    tracing::info!("🦀 stream is running on {}", chain);
 
     while let Some(log) = stream.next().await {
         match process_log(chain, db, &pools_service, log).await {

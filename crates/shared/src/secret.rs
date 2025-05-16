@@ -1,6 +1,5 @@
-use std::{num::NonZeroUsize, time::Duration};
-
-use aws_secretsmanager_caching::SecretsManagerCachingClient;
+use aws_config::BehaviorVersion;
+use aws_sdk_secretsmanager::Client;
 use tokio::sync::OnceCell;
 
 use crate::AppResult;
@@ -27,19 +26,21 @@ async fn read_secret() -> AppResult<Secrets> {
 
     let secret_arn = std::env::var("SECRET_ARN").expect("Missing SECRET_ARN");
 
-    let secret_client = SecretsManagerCachingClient::default(
-        NonZeroUsize::new(10).unwrap(),
-        Duration::from_secs(3600),
-    )
-    .await
-    .unwrap();
+    let config = aws_config::defaults(BehaviorVersion::latest())
+        .region("us-east-1")
+        .load()
+        .await;
 
-    let secret_str = secret_client
-        .get_secret_value(&secret_arn, None, None, true)
+    let client = Client::new(&config);
+
+    let secret_str = client
+        .get_secret_value()
+        .secret_id(secret_arn)
+        .send()
         .await
-        .expect("Can not get secrets")
+        .expect("cen not get secrets")
         .secret_string
-        .expect("Not found secrets string");
+        .expect("not found secrets");
 
     let secret = serde_json::from_str(&secret_str)?;
 

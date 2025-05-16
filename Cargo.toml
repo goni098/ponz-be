@@ -65,5 +65,14 @@ strum = { version = "0.27.1" }
 url = { version = "2.5.4" }
 reqwest = { version = "0.12.15", features = ["json"] }
 
-# aws ksm
-aws_secretsmanager_caching = { version = "1.0.0" }
+# aws
+aws-config = { version = "1.6.2", default-features = false, features = [
+    "rt-tokio",
+    "credentials-process",
+    "sso",
+] }
+aws-sdk-secretsmanager = { version = "1.71.0", default-features = false, features = [
+    "behavior-version-latest",
+    "rt-tokio",
+    "rustls",
+] }
