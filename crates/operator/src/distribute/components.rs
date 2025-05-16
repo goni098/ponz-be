@@ -29,7 +29,10 @@ pub async fn distribute(
         calcualate_distribution_strategies(chain, pools_service, user, token_address).await?;
 
     for strategy in strategies {
+        dbg!(strategy.chain);
+        dbg!(chain);
         if strategy.chain == chain {
+            dbg!("distribute samechain");
             distribute_same_chain(chain, user, strategy).await?;
         } else {
             distriute_cross_chain(chain, user, strategy).await?;
@@ -44,9 +47,12 @@ async fn distribute_same_chain(
     user: Address,
     strategy: UserStrategyResult,
 ) -> AppResult<()> {
+    dbg!("start distribute same chain");
     let wallet_client = get_wallet_client(chain).await;
     let router_contract_address = chain.router_contract_address();
     let router_contract = Router::new(router_contract_address, wallet_client);
+
+    dbg!(wallet_client);
 
     let tx_to_et = router_contract
         .depositFundToStrategySameChainFromOperator(
@@ -67,8 +73,13 @@ async fn distribute_same_chain(
         )
         .into_transaction_request();
 
+    dbg!(wallet_client.get_accounts().await?);
+
     let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
+    dbg!(gas);
+
     let gas_price = wallet_client.get_gas_price().await?;
+    dbg!(gas_price);
 
     let distribution_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
 
@@ -126,13 +137,15 @@ async fn calcualate_distribution_strategies(
     let client = get_public_client(chain).await;
 
     let top_choices = pools_service.find_top_choices().await?;
+
+    dbg!(&top_choices);
     let user_pool_infos = get_user_pool_infos_on_top_choices(user, &top_choices).await?;
 
     let fund_vault_contract_address = chain.fund_vault_contract_address();
     let fund_vault_contract = FundVault::new(fund_vault_contract_address, client);
 
     let mut available_vault_amount = fund_vault_contract
-        .getUserDepositInfor(user, token_address)
+        .getUserDepositInfor(token_address, user)
         .call()
         .await?
         .currentDepositAmount;
@@ -141,6 +154,9 @@ async fn calcualate_distribution_strategies(
     let distribute_min = U256::from(ENV.distribute_min);
 
     let mut result = vec![];
+
+    dbg!(available_vault_amount);
+    dbg!(distribute_min);
 
     for (target_pool, current_user_pool_info) in top_choices.iter().zip(user_pool_infos) {
         if available_vault_amount < distribute_min {
@@ -161,6 +177,8 @@ async fn calcualate_distribution_strategies(
 
         available_vault_amount -= deposit_needed_amount;
     }
+
+    dbg!(&result);
 
     Ok(result)
 }
@@ -197,6 +215,7 @@ struct UserPoolInfo {
     strategy_address: Address,
 }
 
+#[derive(Debug)]
 struct UserStrategyResult {
     chain: NamedChain,
     deposit_needed_amount: U256,

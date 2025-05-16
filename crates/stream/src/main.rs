@@ -52,10 +52,10 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
     let stargate_bridge_address = chain.stargate_bridge_address();
 
     tracing::info!("router_address: {}", router_address);
-    tracing::info!("cross_chain_router_address: {}", router_address);
-    tracing::info!("referral_address: {}", router_address);
-    tracing::info!("lz_executor_address: {}", router_address);
-    tracing::info!("stargate_bridge_address: {}", router_address);
+    tracing::info!("cross_chain_router_address: {}", cross_chain_router_address);
+    tracing::info!("referral_address: {}", referral_address);
+    tracing::info!("lz_executor_address: {}", lz_executor_address);
+    tracing::info!("stargate_bridge_address: {}", stargate_bridge_address);
 
     let filter = Filter::new()
         .address(vec![

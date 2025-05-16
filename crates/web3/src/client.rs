@@ -24,13 +24,10 @@ pub type WsClient = RootProvider;
 pub type WalletClient = FillProvider<
     JoinFill<
         JoinFill<
-            JoinFill<
-                Identity,
-                JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
-            >,
-            WalletFiller<EthereumWallet>,
+            Identity,
+            JoinFill<GasFiller, JoinFill<BlobGasFiller, JoinFill<NonceFiller, ChainIdFiller>>>,
         >,
-        ChainIdFiller,
+        WalletFiller<EthereumWallet>,
     >,
     RootProvider,
 >;
@@ -76,10 +73,12 @@ pub async fn get_wallet_client(chain: NamedChain) -> &'static WalletClient {
                 .parse::<PrivateKeySigner>()
                 .expect("Invalid operator_pk");
 
+            dbg!(operator.address());
+
             for supported_chain in NamedChain::supported_chains() {
                 let client = ProviderBuilder::new()
                     .wallet(EthereumWallet::new(operator.clone()))
-                    .with_chain_id(chain as u64)
+                    .with_chain(chain)
                     .connect_http(chain.rpc_url());
 
                 clients.insert(supported_chain, client);

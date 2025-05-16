@@ -35,11 +35,9 @@ pub async fn fectch_pool_info(
         .apr_items
         .into_iter()
         .fold(0f64, |total_apr, apr_item| {
-            if pool
-                .apr_list
-                .iter()
-                .any(|title| title.contains(&apr_item.title))
-            {
+            if pool.apr_list.as_ref().is_some_and(|apr_list| {
+                apr_list.iter().any(|title| title.contains(&apr_item.title))
+            }) {
                 total_apr + apr_item.apr
             } else {
                 total_apr
@@ -193,12 +191,12 @@ mod test {
                 platform: "balancer".to_string(),
                 strategy_address: "0xCeEA7925d55b373CCDE30D993eB6d627C2704cec".to_string(),
                 token_address: "0xF3F2b4815A58152c9BE53250275e8211163268BA".to_string(),
-                apr_list: vec![
+                apr_list: Some(vec![
                     "waBasGHO APR".to_string(),
                     "GHO reward APR".to_string(),
                     "waBasUSDC APR".to_string(),
                     "Swap fees APR".to_string(),
-                ],
+                ]),
             },
         )
         .await?;

@@ -24,9 +24,7 @@ pub async fn fetch_pools_info(
         .flat_map(|(_, chain)| chain.tokens)
     {
         if let Some(pool) = supported_pools.iter().find(|supported_pool| {
-            supported_pool.name == token.name
-                && supported_pool.address == token.pool_address
-                && supported_pool.token_address == token.token_address
+            supported_pool.name == token.name && supported_pool.address == token.pool_address
         }) {
             let apr = token.apr.parse()?;
             let apr_7d = token.apr7d.parse()?;
@@ -38,10 +36,10 @@ pub async fn fetch_pools_info(
                 apr_30d,
                 tvl,
                 apr_7d,
-                name: token.name,
+                name: pool.name.clone(),
                 platform: "allbridge".to_string(),
-                pool_address: token.pool_address,
-                token_address: token.token_address,
+                pool_address: pool.address.clone(),
+                token_address: pool.token_address.clone(),
                 chain: NamedChain::try_from(pool.chain_id as u64)
                     .map_err(|_| AppError::Custom("can not convert chain from chain+id".into()))?,
                 strategy_address: pool.strategy_address.clone(),
@@ -92,26 +90,26 @@ mod test {
             &[
                 SupportedPool {
                     name: "USD Coin".to_string(),
-                    address: "0xDA6bb1ec3BaBA68B26bEa0508d6f81c9ec5e96d5".to_string(),
+                    address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
                     token_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string(),
                     chain_id: 8453,
                     enable: true,
                     id: 1,
                     platform: "noname".to_string(),
                     strategy_address: "ignore".to_string(),
-                    apr_list: vec![],
+                    apr_list: Some(vec![]),
                 },
-                SupportedPool {
-                    name: "USD Coin".to_string(),
-                    address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
-                    token_address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(),
-                    chain_id: 8453,
-                    enable: true,
-                    id: 1,
-                    platform: "noname".to_string(),
-                    strategy_address: "ignore".to_string(),
-                    apr_list: vec![],
-                },
+                // SupportedPool {
+                //     name: "USD Coin".to_string(),
+                //     address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
+                //     token_address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(),
+                //     chain_id: 8453,
+                //     enable: true,
+                //     id: 1,
+                //     platform: "noname".to_string(),
+                //     strategy_address: "ignore".to_string(),
+                //     apr_list: Some(vec![]),
+                // },
             ],
         )
         .await?;

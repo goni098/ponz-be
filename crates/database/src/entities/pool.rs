@@ -15,7 +15,7 @@ pub struct Model {
     pub enable: bool,
     pub name: String,
     pub platform: String,
-    pub apr_list: Vec<String>,
+    pub apr_list: Option<Vec<String>>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

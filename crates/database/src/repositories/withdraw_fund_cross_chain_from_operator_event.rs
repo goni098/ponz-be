@@ -2,8 +2,8 @@ use alloy::primitives::TxHash;
 use alloy_chains::NamedChain;
 use chrono::DateTime;
 use sea_orm::{
-    ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr, EntityTrait,
-    QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
+    ActiveEnum, ActiveValue::Set, ColumnTrait, DatabaseConnection, DatabaseTransaction, DbErr,
+    EntityTrait, QueryFilter, QueryOrder, QuerySelect, prelude::Expr, sea_query::OnConflict,
 };
 use web3::contracts::cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator;
 
@@ -91,11 +91,13 @@ pub async fn pin_as_resolved<T: ToString>(
     log_index: u64,
 ) -> Result<(), DbErr> {
     withdraw_fund_cross_chain_from_operator_event::Entity::update_many()
-        .filter(withdraw_fund_cross_chain_from_operator_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(
+            withdraw_fund_cross_chain_from_operator_event::Column::TxHash.eq(tx_hash.to_string()),
+        )
         .filter(withdraw_fund_cross_chain_from_operator_event::Column::LogIndex.eq(log_index))
         .col_expr(
             withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus,
-            Expr::value(TxnStatus::Done),
+            Expr::value(TxnStatus::Done.as_enum()),
         )
         .exec(db)
         .await?;
@@ -110,11 +112,13 @@ pub async fn pin_as_failed<T: ToString>(
     error_msg: String,
 ) -> Result<(), DbErr> {
     withdraw_fund_cross_chain_from_operator_event::Entity::update_many()
-        .filter(withdraw_fund_cross_chain_from_operator_event::Column::Id.eq(tx_hash.to_string()))
+        .filter(
+            withdraw_fund_cross_chain_from_operator_event::Column::TxHash.eq(tx_hash.to_string()),
+        )
         .filter(withdraw_fund_cross_chain_from_operator_event::Column::LogIndex.eq(log_index))
         .col_expr(
             withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus,
-            Expr::value(TxnStatus::Failed),
+            Expr::value(TxnStatus::Failed.as_enum()),
         )
         .col_expr(
             withdraw_fund_cross_chain_from_operator_event::Column::SmfErrorMsg,

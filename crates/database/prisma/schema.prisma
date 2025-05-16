@@ -227,7 +227,7 @@ model pool {
   address          String   @db.VarChar(42)
   strategy_address String   @db.VarChar(42)
   token_address    String   @db.VarChar(42)
-  apr_list         String[] // for balancer pool
+  apr_list         String[] @db.VarChar // for balancer pool
   enable           Boolean
 }
 
