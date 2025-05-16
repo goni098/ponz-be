@@ -8,13 +8,14 @@ use serde::Serialize;
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i64,
-    pub name: String,
-    pub platform: String,
     pub chain_id: i64,
     pub address: String,
     pub strategy_address: String,
     pub token_address: String,
     pub enable: bool,
+    pub name: String,
+    pub platform: String,
+    pub apr_list: Vec<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

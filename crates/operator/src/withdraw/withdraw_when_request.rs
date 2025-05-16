@@ -22,7 +22,7 @@ use web3::{
     },
 };
 
-use crate::{bridges::stargate, withdraw::merge_tokens_from_withdraw_request};
+use crate::{bridges::stargate, withdraw::components::merge_tokens_from_withdraw_request};
 
 pub async fn withdraw_when_request(
     dst_chain: NamedChain,

@@ -19,10 +19,10 @@ model renew_token {
 
 model transfer_fund_cross_chain_event {
   id                               BigInt   @id @default(autoincrement())
+  chain_id                         BigInt
   tx_hash                          String   @db.VarChar
   log_index                        BigInt
   emit_at                          DateTime @db.Timestamptz(3)
-  chain_id                         BigInt
   depositor                        String   @db.VarChar(42)
   deposited_roken                  String   @db.VarChar(42)
   token_in_for_bridge              String   @db.VarChar(42)
@@ -39,10 +39,10 @@ model transfer_fund_cross_chain_event {
 
 model withdraw_fund_cross_chain_from_operator_event {
   id                BigInt     @id @default(autoincrement())
+  chain_id          BigInt
   tx_hash           String     @db.VarChar
   log_index         BigInt
   emit_at           DateTime   @db.Timestamptz(3)
-  chain_id          BigInt
   receiver          String     @db.VarChar(42)
   token_out         String     @db.VarChar(42)
   transport_msg     String     @db.VarChar
@@ -56,10 +56,10 @@ model withdraw_fund_cross_chain_from_operator_event {
 
 model distribute_fund_cross_chain {
   id                      BigInt   @id @default(autoincrement())
+  chain_id                BigInt
   tx_hash                 String   @db.VarChar
   log_index               BigInt
   emit_at                 DateTime @db.Timestamptz(3)
-  chain_id                BigInt
   strategy_address        String   @db.VarChar(42)
   depositor               String   @db.VarChar(42)
   deposited_token_address String   @db.VarChar(42)
@@ -75,10 +75,10 @@ model distribute_fund_cross_chain {
 
 model execute_receive_fund_cross_chain_failed_event {
   id                      BigInt     @id @default(autoincrement())
+  chain_id                BigInt
   tx_hash                 String     @db.VarChar
   log_index               BigInt
   emit_at                 DateTime   @db.Timestamptz(3)
-  chain_id                BigInt
   guid                    String     @db.VarChar
   src_id                  BigInt
   compose_msg             String     @db.VarChar
@@ -93,10 +93,10 @@ model execute_receive_fund_cross_chain_failed_event {
 
 model claim_event {
   id        BigInt   @id @default(autoincrement())
+  chain_id  BigInt
   tx_hash   String   @db.VarChar
   log_index BigInt
   emit_at   DateTime @db.Timestamptz(3)
-  chain_id  BigInt
   amount    Decimal  @db.Decimal(90, 0)
   from      String   @db.VarChar(42)
   to        String   @db.VarChar(42)
@@ -106,10 +106,10 @@ model claim_event {
 
 model deposit_fund_event {
   id                    BigInt     @id @default(autoincrement())
+  chain_id              BigInt
   tx_hash               String     @db.VarChar
   log_index             BigInt
   emit_at               DateTime   @db.Timestamptz(3)
-  chain_id              BigInt
   receiver              String     @db.VarChar(42)
   token_address         String     @db.VarChar(42)
   deposit_amount        Decimal    @db.Decimal(90, 0)
@@ -122,10 +122,10 @@ model deposit_fund_event {
 
 model distribute_user_fund_event {
   id                      BigInt     @id @default(autoincrement())
+  chain_id                BigInt
   tx_hash                 String     @db.VarChar
   log_index               BigInt
   emit_at                 DateTime   @db.Timestamptz(3)
-  chain_id                BigInt
   strategy_address        String     @db.VarChar(42)
   depositor               String     @db.VarChar(42)
   deposited_token_address String     @db.VarChar(42)
@@ -143,10 +143,10 @@ model distribute_user_fund_event {
 
 model withdraw_fund_same_chain_event {
   id                     BigInt   @id @default(autoincrement())
+  chain_id               BigInt
   tx_hash                String   @db.VarChar
   log_index              BigInt
   emit_at                DateTime @db.Timestamptz(3)
-  chain_id               BigInt
   receiver               String   @db.VarChar(42)
   user                   String   @db.VarChar(42)
   strategy_address       String   @db.VarChar(42)
@@ -159,10 +159,10 @@ model withdraw_fund_same_chain_event {
 
 model rebalance_fund_same_chain_event {
   id                BigInt     @id @default(autoincrement())
+  chain_id          BigInt
   tx_hash           String     @db.VarChar
   log_index         BigInt
   emit_at           DateTime   @db.Timestamptz(3)
-  chain_id          BigInt
   strategy_address  String     @db.VarChar(42)
   user_address      String     @db.VarChar(42)
   underlying_asset  String     @db.VarChar(42)
@@ -179,10 +179,10 @@ model rebalance_fund_same_chain_event {
 
 model withdraw_request_event {
   id            BigInt     @id @default(autoincrement())
+  chain_id      BigInt
   tx_hash       String     @db.VarChar
   log_index     BigInt
   emit_at       DateTime   @db.Timestamptz(3)
-  chain_id      BigInt
   args          Json
   token_out     String     @db.VarChar(42)
   status        txn_status
@@ -193,10 +193,10 @@ model withdraw_request_event {
 
 model transfer_fund_from_router_to_vault_cross_chain_event {
   id                      BigInt   @id @default(autoincrement())
+  chain_id                BigInt
   tx_hash                 String   @db.VarChar
   log_index               BigInt
   emit_at                 DateTime @db.Timestamptz(3)
-  chain_id                BigInt
   depositor               String   @db.VarChar(42)
   deposited_token_address String   @db.VarChar(42)
   amount                  Decimal  @db.Decimal(90, 0)
@@ -206,10 +206,10 @@ model transfer_fund_from_router_to_vault_cross_chain_event {
 
 model contract_event {
   id                BigInt   @id @default(autoincrement())
+  chain_id          BigInt
   tx_hash           String   @db.VarChar
   log_index         BigInt
   emit_at           DateTime @db.Timestamptz(3)
-  chain_id          BigInt
   contract_address  String   @db.VarChar
   signature         String   @db.VarChar
   args              Json
@@ -220,13 +220,14 @@ model contract_event {
 }
 
 model pool {
-  id               BigInt  @id @default(autoincrement())
-  name             String  @db.VarChar
-  platform         String  @db.VarChar
+  id               BigInt   @id @default(autoincrement())
+  name             String   @db.VarChar
+  platform         String   @db.VarChar
   chain_id         BigInt
-  address          String  @db.VarChar(42)
-  strategy_address String  @db.VarChar(42)
-  token_address    String  @db.VarChar(42)
+  address          String   @db.VarChar(42)
+  strategy_address String   @db.VarChar(42)
+  token_address    String   @db.VarChar(42)
+  apr_list         String[] // for balancer pool
   enable           Boolean
 }
 

@@ -9,7 +9,7 @@ use web3::{
     contracts::{router::Router::WithdrawRequest, stargate_bridge::StargateBridge},
 };
 
-use crate::withdraw::{TokenAsset, merge_tokens_from_withdraw_request};
+use crate::withdraw::components::{TokenAsset, merge_tokens_from_withdraw_request};
 
 pub async fn estimate_withdraw(
     dst_chain: NamedChain,

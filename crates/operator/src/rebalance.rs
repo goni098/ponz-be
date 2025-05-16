@@ -2,7 +2,7 @@ mod rebalance_on_deadline;
 
 use alloy_chains::NamedChain;
 use database::{repositories, sea_orm::DatabaseConnection};
-pub use rebalance_on_deadline::*;
+use rebalance_on_deadline::*;
 use shared::AppResult;
 
 pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {

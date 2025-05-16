@@ -1,31 +1,18 @@
+mod components;
 mod distribute_when_deposit;
 mod distribute_when_rebalance;
 mod distribute_when_withdraw_from_operator;
 
-use alloy::{
-    primitives::{Address, Bytes, U256},
-    providers::Provider,
-};
 use alloy_chains::NamedChain;
 use database::{repositories, sea_orm::DatabaseConnection};
 pub use distribute_when_deposit::*;
 pub use distribute_when_rebalance::*;
 pub use distribute_when_withdraw_from_operator::*;
-use pools::{ExternalPoolInfo, ExternalPoolsService};
-use shared::{AppResult, env::ENV};
-use web3::{
-    DynChain,
-    client::{get_public_client, get_wallet_client},
-    contracts::{
-        chain_link_datafeed::connvert_eth_to_usd,
-        cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator,
-        fund_vault::FundVault,
-        router::{
-            Router::{self, DepositFund, RebalanceFundSameChain},
-            RouterCommonType::{DepositToStrategySameChain, SwapTokenWhenDepositParam},
-        },
-        strategy::Strategy,
-    },
+use pools::ExternalPoolsService;
+use shared::AppResult;
+use web3::contracts::{
+    cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator,
+    router::Router::{DepositFund, RebalanceFundSameChain},
 };
 
 pub async fn process_from_db(
@@ -47,7 +34,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = DepositFund::try_from(unresolved_event)?;
 
-        match distribute_when_deposit(chain, db, pools_service, event).await {
+        match distribute_when_deposit(chain, pools_service, event).await {
             Ok(_) => {
                 repositories::deposit_fund_event::pin_as_resolved(db, tx_hash, log_index).await?;
             }
@@ -68,7 +55,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = RebalanceFundSameChain::try_from(unresolved_event)?;
 
-        match distribute_when_rebalance(chain, db, pools_service, event).await {
+        match distribute_when_rebalance(chain, pools_service, event).await {
             Ok(_) => {
                 repositories::rebalance_fund_same_chain_event::pin_as_resolved(
                     db, tx_hash, log_index,
@@ -92,7 +79,7 @@ pub async fn process_from_db(
         let log_index = unresolved_event.log_index as u64;
         let event = WithdrawFundCrossChainFromOperator::try_from(unresolved_event)?;
 
-        match distribute_when_withdraw_from_operator(chain, db, pools_service, event).await {
+        match distribute_when_withdraw_from_operator(chain, pools_service, event).await {
             Ok(_) => {
                 repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_resolved(
                     db, tx_hash, log_index,
@@ -112,192 +99,4 @@ pub async fn process_from_db(
     }
 
     Ok(())
-}
-
-async fn distribute(
-    chain: NamedChain,
-    db: &DatabaseConnection,
-    pools_service: &ExternalPoolsService,
-    user: Address,
-    token_address: Address,
-) -> AppResult<()> {
-    let strategies =
-        calcualate_distribution_strategies(chain, db, pools_service, user, token_address).await?;
-
-    for strategy in strategies {
-        if strategy.chain == chain {
-            distribute_same_chain(chain, user, strategy).await?;
-        } else {
-            distriute_cross_chain(chain, user, strategy).await?;
-        }
-    }
-
-    Ok(())
-}
-
-async fn distribute_same_chain(
-    chain: NamedChain,
-    user: Address,
-    strategy: UserStrategyResult,
-) -> AppResult<()> {
-    let wallet_client = get_wallet_client(chain).await;
-    let router_contract_address = chain.router_contract_address();
-    let router_contract = Router::new(router_contract_address, wallet_client);
-
-    let tx_to_et = router_contract
-        .depositFundToStrategySameChainFromOperator(
-            DepositToStrategySameChain {
-                depositedTokenAddress: strategy.token_address,
-                depositor: user,
-                strategyAddress: strategy.strategy_address,
-                amount: strategy.deposit_needed_amount,
-                distributionFee: U256::ZERO,
-                externalCallData: Bytes::new(),
-            },
-            SwapTokenWhenDepositParam {
-                amountOutMin: U256::ZERO,
-                externalCallData: Bytes::new(),
-                isV3: false,
-                swapContract: Address::ZERO,
-            },
-        )
-        .into_transaction_request();
-
-    let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
-    let gas_price = wallet_client.get_gas_price().await?;
-
-    let distribution_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
-
-    let pending_tx = router_contract
-        .depositFundToStrategySameChainFromOperator(
-            DepositToStrategySameChain {
-                depositedTokenAddress: strategy.token_address,
-                depositor: user,
-                strategyAddress: strategy.strategy_address,
-                amount: strategy.deposit_needed_amount,
-                distributionFee: distribution_fee,
-                externalCallData: Bytes::new(),
-            },
-            SwapTokenWhenDepositParam {
-                amountOutMin: U256::ZERO,
-                externalCallData: Bytes::new(),
-                isV3: false,
-                swapContract: Address::ZERO,
-            },
-        )
-        .send()
-        .await?;
-
-    let tx_hash = *pending_tx.tx_hash();
-
-    tracing::info!(
-        "Waiting for depositFundToStrategySameChainFromOperator transaction... {}",
-        tx_hash
-    );
-
-    pending_tx.watch().await?;
-
-    tracing::info!(
-        "Execute depositFundToStrategySameChainFromOperator transaction successfully {}",
-        tx_hash
-    );
-
-    Ok(())
-}
-
-async fn distriute_cross_chain(
-    _chain: NamedChain,
-    _user: Address,
-    _strategy: UserStrategyResult,
-) -> AppResult<()> {
-    Ok(())
-}
-
-async fn calcualate_distribution_strategies(
-    chain: NamedChain,
-    db: &DatabaseConnection,
-    pools_service: &ExternalPoolsService,
-    user: Address,
-    token_address: Address,
-) -> AppResult<Vec<UserStrategyResult>> {
-    let client = get_public_client(chain).await;
-    let supported_pools = repositories::pool::find_supported_pools(db).await?;
-
-    let top_choices = pools_service.find_top_choices(&supported_pools).await?;
-    let user_pool_infos = get_user_pool_infos_on_top_choices(user, &top_choices).await?;
-
-    let fund_vault_contract_address = chain.fund_vault_contract_address();
-    let fund_vault_contract = FundVault::new(fund_vault_contract_address, client);
-
-    let mut available_vault_amount = fund_vault_contract
-        .getUserDepositInfor(user, token_address)
-        .call()
-        .await?
-        .currentDepositAmount;
-
-    let distribute_target = U256::from(ENV.distribute_target);
-    let distribute_min = U256::from(ENV.distribute_min);
-
-    let mut result = vec![];
-
-    for (target_pool, current_user_pool_info) in top_choices.iter().zip(user_pool_infos) {
-        if available_vault_amount < distribute_min {
-            break;
-        }
-
-        let deposit_needed_amount = U256::min(
-            available_vault_amount,
-            distribute_target - current_user_pool_info.amount,
-        );
-
-        result.push(UserStrategyResult {
-            chain: target_pool.chain,
-            deposit_needed_amount,
-            strategy_address: current_user_pool_info.strategy_address,
-            token_address: current_user_pool_info.strategy_address,
-        });
-
-        available_vault_amount -= deposit_needed_amount;
-    }
-
-    Ok(result)
-}
-
-async fn get_user_pool_infos_on_top_choices(
-    user: Address,
-    top_choices: &[ExternalPoolInfo],
-) -> AppResult<Vec<UserPoolInfo>> {
-    let mut user_pools = Vec::with_capacity(top_choices.len());
-
-    for pool in top_choices {
-        let chain = pool.chain;
-        let client = get_public_client(chain).await;
-        let token_address = pool.token_address.parse()?;
-        let strategy_contract_address = pool.strategy_address.parse()?;
-        let strategy_contract = Strategy::new(strategy_contract_address, client);
-
-        let strategy_amount = strategy_contract
-            .getActualAssets(user, token_address)
-            .call()
-            .await?;
-
-        user_pools.push(UserPoolInfo {
-            amount: strategy_amount,
-            strategy_address: strategy_contract_address,
-        });
-    }
-
-    Ok(user_pools)
-}
-
-struct UserPoolInfo {
-    amount: U256,
-    strategy_address: Address,
-}
-
-struct UserStrategyResult {
-    chain: NamedChain,
-    deposit_needed_amount: U256,
-    token_address: Address,
-    strategy_address: Address,
 }

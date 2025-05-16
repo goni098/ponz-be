@@ -15,3 +15,4 @@ shared = { path = "../shared" }
 pools = { path = "../pools" }
 database = { path = "../database" }
 web3 = { path = "../web3" }
+bridges = { path = "../bridges" }

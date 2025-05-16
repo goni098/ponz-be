@@ -99,6 +99,7 @@ mod test {
                     id: 1,
                     platform: "noname".to_string(),
                     strategy_address: "ignore".to_string(),
+                    apr_list: vec![],
                 },
                 SupportedPool {
                     name: "USD Coin".to_string(),
@@ -109,6 +110,7 @@ mod test {
                     id: 1,
                     platform: "noname".to_string(),
                     strategy_address: "ignore".to_string(),
+                    apr_list: vec![],
                 },
             ],
         )

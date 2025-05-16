@@ -17,7 +17,7 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     let mut opt = ConnectOptions::new(&ENV.db_url);
     opt.sqlx_logging(false);
     let db = Database::connect(opt).await?;
-    let pools_service = ExternalPoolsService::new();
+    let pools_service = ExternalPoolsService::new(db.clone());
 
     loop {
         let _ = distribute::process_from_db(chain, &db, &pools_service).await;

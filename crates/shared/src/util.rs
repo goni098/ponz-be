@@ -1,6 +1,10 @@
 use alloy::primitives::U256;
+use alloy_chains::NamedChain;
 
-use crate::{AppError::Custom, AppResult};
+use crate::{
+    AppError::{self, Custom},
+    AppResult,
+};
 
 pub trait Percent {
     fn percent(&self, percent: u8) -> Self;
@@ -62,4 +66,9 @@ impl CheckedPercent for U256 {
             .and_then(|amount| amount.checked_div(precision_unit))
             .ok_or(Custom("Operate units none error".into()))
     }
+}
+
+pub fn to_chain(chain_id: u64) -> AppResult<NamedChain> {
+    NamedChain::try_from(chain_id)
+        .map_err(|_| AppError::Custom(format!("can not convert chain_id {}", chain_id).into()))
 }

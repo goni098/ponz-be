@@ -1,0 +1,11 @@
+[package]
+name = "bridges"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+alloy-chains = { workspace = true }
+alloy = { workspace = true }
+
+shared = { path = "../shared" }
+web3 = { path = "../web3" }

@@ -68,7 +68,7 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
         .events(EXPECTED_EVENTS);
 
     let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
-    let pools_service = ExternalPoolsService::new();
+    let pools_service = ExternalPoolsService::new(db.clone());
 
     tracing::info!("🦀 stream is running on {}", chain);
 
@@ -105,7 +105,6 @@ async fn process_log(
         ExpectedLog::DepositFund(log) => {
             match operator::distribute::distribute_when_deposit(
                 chain,
-                db,
                 pools_service,
                 log.inner.data,
             )
@@ -129,7 +128,6 @@ async fn process_log(
         ExpectedLog::RebalanceFundSameChain(log) => {
             match operator::distribute::distribute_when_rebalance(
                 chain,
-                db,
                 pools_service,
                 log.inner.data,
             )
@@ -155,7 +153,6 @@ async fn process_log(
         ExpectedLog::WithdrawFundCrossChainFromOperator(log) => {
             match operator::distribute::distribute_when_withdraw_from_operator(
                 chain,
-                db,
                 pools_service,
                 log.inner.data,
             )

@@ -8,6 +8,7 @@ reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 alloy-chains = { workspace = true }
+alloy = { workspace = true }
 
 web3 = { path = "../web3" }
 shared = { path = "../shared" }
