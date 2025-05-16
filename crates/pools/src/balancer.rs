@@ -53,9 +53,9 @@ pub async fn fectch_pool_info(
         chain: to_chain(pool.chain_id as u64)?,
         name: pool.name.clone(),
         platform: pool.platform.clone(),
-        pool_address: pool.address.clone(),
-        strategy_address: pool.strategy_address.clone(),
-        token_address: pool.token_address.clone(),
+        pool_address: pool.address.parse()?,
+        strategy_address: pool.strategy_address.parse()?,
+        token_address: pool.token_address.parse()?,
         tvl: liquidity,
     };
 
@@ -201,7 +201,7 @@ mod test {
         )
         .await?;
 
-        dbg!(pool_info);
+        println!("pool_info: {:#?}", pool_info);
 
         Ok(())
     }

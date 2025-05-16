@@ -20,6 +20,7 @@ pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppR
                     .await?;
             }
             Err(error) => {
+                tracing::error!("rebalance_on_deadline error: {:#?}", error);
                 repositories::distribute_user_fund_event::pin_as_failed(
                     db,
                     tx_hash,

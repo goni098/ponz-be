@@ -146,7 +146,8 @@ mod test {
         let event = WithdrawRequest::try_from(model);
 
         assert!(event.is_ok());
-        dbg!(event.unwrap());
+
+        println!("event: {:#?}", event);
     }
 
     // cargo test --package database --lib -- models::test::convert_deposit_fund_event --exact --show-output
@@ -174,6 +175,7 @@ mod test {
         let event = DepositFund::try_from(model);
 
         assert!(event.is_ok());
-        dbg!(event.unwrap());
+
+        println!("event: {:#?}", event);
     }
 }

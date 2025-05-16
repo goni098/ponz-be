@@ -154,6 +154,6 @@ mod test {
 
         assert_eq!(recovered, signer.address());
 
-        dbg!(signature.to_string());
+        println!("signature: {:?}", signature);
     }
 }

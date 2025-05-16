@@ -25,8 +25,7 @@ pub async fn distribute(
     user: Address,
     token_address: Address,
 ) -> AppResult<()> {
-    let strategies =
-        calcualate_distribution_strategies(chain, pools_service, user, token_address).await?;
+    let strategies = calcualate_strategies(chain, pools_service, user, token_address).await?;
 
     for strategy in strategies {
         if strategy.chain == chain {
@@ -72,11 +71,9 @@ async fn distribute_same_chain(
         .into_transaction_request();
 
     let gas = wallet_client.estimate_gas(tx_to_et).await? as u128;
-
     let gas_price = wallet_client.get_gas_price().await?;
 
     let distribution_fee = connvert_eth_to_usd(chain, U256::from(gas * gas_price)).await?;
-
     tracing::debug!("distribution_fee {:#?}", distribution_fee);
 
     let pending_tx = router_contract
@@ -106,6 +103,8 @@ async fn distribute_same_chain(
         tx_hash
     );
 
+    pending_tx.get_receipt().await?;
+
     tracing::info!(
         "Execute depositFundToStrategySameChainFromOperator transaction successfully {}",
         tx_hash
@@ -122,7 +121,7 @@ async fn distriute_cross_chain(
     Ok(())
 }
 
-async fn calcualate_distribution_strategies(
+async fn calcualate_strategies(
     chain: NamedChain,
     pools_service: &ExternalPoolsService,
     user: Address,
@@ -131,9 +130,9 @@ async fn calcualate_distribution_strategies(
     let client = get_public_client(chain).await;
 
     let top_choices = pools_service.find_top_choices().await?;
-
     tracing::debug!("top_choices {:#?}", top_choices);
-    let user_pool_infos = get_user_pool_infos_on_top_choices(user, &top_choices).await?;
+
+    let user_pool_infos = get_user_pool_infos_from_top_choices(user, &top_choices).await?;
 
     let fund_vault_contract_address = chain.fund_vault_contract_address();
     let fund_vault_contract = FundVault::new(fund_vault_contract_address, client);
@@ -147,11 +146,13 @@ async fn calcualate_distribution_strategies(
     let distribute_target = U256::from(ENV.distribute_target);
     let distribute_min = U256::from(ENV.distribute_min);
 
-    let mut result = vec![];
-
-    tracing::debug!("available_vault_amount: {}", available_vault_amount);
+    let mut result = Vec::with_capacity(top_choices.len());
 
     for (target_pool, current_user_pool_info) in top_choices.iter().zip(user_pool_infos) {
+        tracing::debug!("target_pool: {:#?}", target_pool);
+        tracing::debug!("current_user_pool_info: {:#?}", current_user_pool_info);
+        tracing::debug!("available_vault_amount: {}", available_vault_amount);
+
         if available_vault_amount < distribute_min {
             break;
         }
@@ -174,7 +175,7 @@ async fn calcualate_distribution_strategies(
     Ok(result)
 }
 
-async fn get_user_pool_infos_on_top_choices(
+async fn get_user_pool_infos_from_top_choices(
     user: Address,
     top_choices: &[ExternalPoolInfo],
 ) -> AppResult<Vec<UserPoolInfo>> {
@@ -183,25 +184,24 @@ async fn get_user_pool_infos_on_top_choices(
     for pool in top_choices {
         let chain = pool.chain;
         let client = get_public_client(chain).await;
-        let token_address = pool.token_address.parse()?;
-        let strategy_contract_address = pool.strategy_address.parse()?;
-        let strategy_contract = Strategy::new(strategy_contract_address, client);
+        let strategy_contract = Strategy::new(pool.strategy_address, client);
 
         let strategy_amount = strategy_contract
-            .getActualAssets(user, token_address)
+            .getActualAssets(user, pool.token_address)
             .call()
             .await?;
 
         user_pools.push(UserPoolInfo {
             amount: strategy_amount,
-            strategy_address: strategy_contract_address,
-            token_address,
+            strategy_address: pool.strategy_address,
+            token_address: pool.token_address,
         });
     }
 
     Ok(user_pools)
 }
 
+#[derive(Debug)]
 struct UserPoolInfo {
     amount: U256,
     strategy_address: Address,

@@ -1,10 +1,9 @@
 use std::collections::HashMap;
 
-use alloy_chains::NamedChain;
 use database::models::SupportedPool;
 use reqwest::Client;
 use serde::Deserialize;
-use shared::{AppError, AppResult};
+use shared::{AppResult, util::to_chain};
 
 use crate::ExternalPoolInfo;
 
@@ -31,18 +30,21 @@ pub async fn fetch_pools_info(
             let apr_30d = token.apr30d.parse()?;
             let tvl = token.pool_info.total_lp_amount.parse()?;
 
+            let pool_address = pool.address.parse()?;
+            let token_address = pool.token_address.parse()?;
+            let strategy_address = pool.strategy_address.parse()?;
+
             pools_info.push(ExternalPoolInfo {
                 apr,
                 apr_30d,
                 tvl,
                 apr_7d,
                 name: pool.name.clone(),
-                platform: "allbridge".to_string(),
-                pool_address: pool.address.clone(),
-                token_address: pool.token_address.clone(),
-                chain: NamedChain::try_from(pool.chain_id as u64)
-                    .map_err(|_| AppError::Custom("can not convert chain from chain+id".into()))?,
-                strategy_address: pool.strategy_address.clone(),
+                platform: pool.platform.clone(),
+                pool_address,
+                token_address,
+                chain: to_chain(pool.chain_id as u64)?,
+                strategy_address,
             });
         }
     }
@@ -89,31 +91,31 @@ mod test {
             &[
                 SupportedPool {
                     name: "USD Coin".to_string(),
+                    address: "0xDA6bb1ec3BaBA68B26bEa0508d6f81c9ec5e96d5".to_string(),
+                    token_address: "0xF3F2b4815A58152c9BE53250275e8211163268BA".to_string(),
+                    chain_id: 8453,
+                    enable: true,
+                    id: 1,
+                    platform: "noname".to_string(),
+                    strategy_address: "0x5ADB96e1728Eb6493C2E0033eC70F829CaD83b1b".to_string(),
+                    apr_list: Some(vec![]),
+                },
+                SupportedPool {
+                    name: "USD Coin".to_string(),
                     address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
                     token_address: "0xF3F2b4815A58152c9BE53250275e8211163268BA".to_string(),
                     chain_id: 8453,
                     enable: true,
                     id: 1,
                     platform: "noname".to_string(),
-                    strategy_address: "ignore".to_string(),
+                    strategy_address: "0xc61f0F0a752e0c04f6eFb0f0465A0b74a54185C4".to_string(),
                     apr_list: Some(vec![]),
                 },
-                // SupportedPool {
-                //     name: "USD Coin".to_string(),
-                //     address: "0x690e66fc0F8be8964d40e55EdE6aEBdfcB8A21Df".to_string(),
-                //     token_address: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(),
-                //     chain_id: 8453,
-                //     enable: true,
-                //     id: 1,
-                //     platform: "noname".to_string(),
-                //     strategy_address: "ignore".to_string(),
-                //     apr_list: Some(vec![]),
-                // },
             ],
         )
         .await?;
 
-        dbg!(pools);
+        println!("pools: {:#?}", pools);
 
         Ok(())
     }

@@ -12,22 +12,22 @@ use web3::{
 };
 
 #[derive(Default)]
-pub struct UserTokenParam {
+pub struct WithdrawParam {
     pub total_amount: U256,
     pub un_distributed_withdraw_amount: U256,
     pub cross_chain_native_value_fee: U256,
     pub withdraw_strategy_same_chains: Vec<WithdrawStrategySameChain>,
 }
 
-pub async fn merge_assets_from_withdraw_request(
+pub async fn merge_and_estimate_withdraw_request(
     chain: NamedChain,
     event: &WithdrawRequest,
     estimate_cross_chain: bool,
-) -> AppResult<HashMap<Address, UserTokenParam>> {
+) -> AppResult<HashMap<Address, WithdrawParam>> {
     let client = get_public_client(chain).await;
     let mut strategy_contract = Strategy::new(Address::ZERO, client);
 
-    let mut assets: HashMap<Address, UserTokenParam> = HashMap::new();
+    let mut assets: HashMap<Address, WithdrawParam> = HashMap::new();
 
     for asset_in_vault in &event.unDistributedWithdraw {
         let asset = assets.entry(asset_in_vault.tokenAddress).or_default();

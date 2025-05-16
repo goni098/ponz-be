@@ -27,7 +27,7 @@ async fn read_secret() -> AppResult<Secrets> {
     let secret_arn = std::env::var("SECRET_ARN").expect("Missing SECRET_ARN");
 
     let config = aws_config::defaults(BehaviorVersion::latest())
-        .region("us-east-1")
+        .region("ap-southeast-1")
         .load()
         .await;
 

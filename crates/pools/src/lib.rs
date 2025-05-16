@@ -1,3 +1,4 @@
+use alloy::primitives::Address;
 use alloy_chains::NamedChain;
 use database::{repositories, sea_orm::DatabaseConnection};
 use shared::AppResult;
@@ -15,14 +16,14 @@ pub struct ExternalPoolsService {
 pub struct ExternalPoolInfo {
     pub platform: String,
     pub name: String,
-    pub pool_address: String,
-    pub token_address: String,
+    pub pool_address: Address,
+    pub token_address: Address,
     pub tvl: f64,
     pub apr: f64,
     pub apr_7d: f64,
     pub apr_30d: f64,
     pub chain: NamedChain,
-    pub strategy_address: String,
+    pub strategy_address: Address,
 }
 
 impl ExternalPoolsService {

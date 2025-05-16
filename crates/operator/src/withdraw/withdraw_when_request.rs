@@ -22,7 +22,7 @@ use web3::{
     },
 };
 
-use crate::withdraw::components::merge_assets_from_withdraw_request;
+use crate::withdraw::components::merge_and_estimate_withdraw_request;
 
 pub async fn withdraw_when_request(
     chain: NamedChain,
@@ -47,7 +47,7 @@ async fn withdraw_same_chain(
     let cross_router_contract =
         CrossChainRouter::new(chain.cross_chain_router_contract_address(), &wallet_client);
 
-    let assets = merge_assets_from_withdraw_request(chain, &event, false).await?;
+    let assets = merge_and_estimate_withdraw_request(chain, &event, false).await?;
 
     let is_refferal = repositories::user::is_refferal_user(db, event.user).await?;
 
@@ -129,7 +129,7 @@ async fn withdraw_cross_chain(
         &src_wallet_client,
     );
 
-    let assets = merge_assets_from_withdraw_request(dst_chain, &event, false).await?;
+    let assets = merge_and_estimate_withdraw_request(dst_chain, &event, true).await?;
 
     let transport_msg = stargate_bridge_contract
         .prepareTransportMsg(dst_chain as u32, 0)
@@ -179,7 +179,7 @@ async fn withdraw_cross_chain(
     let gas_price = src_wallet_client.get_gas_price().await?;
 
     let withdraw_fee = connvert_eth_to_usd(
-        dst_chain,
+        src_chain,
         U256::from(U256::from(gas * gas_price) + total_value_to_send),
     )
     .await?;

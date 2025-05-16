@@ -54,7 +54,7 @@ mod test {
 
         let usd_equivalent = format_ether(usd_equivalent_in_wei);
 
-        dbg!(usd_equivalent);
+        println!("usd_equivalent {}", usd_equivalent);
 
         Ok(())
     }
