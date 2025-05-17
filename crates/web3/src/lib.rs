@@ -10,12 +10,6 @@ pub mod contracts;
 pub mod events;
 pub mod logs;
 
-pub enum StrategyPool {
-    Balancer,
-    AllBridge,
-    Aerodrome,
-}
-
 pub trait DynChain {
     fn rpc_url(&self) -> Url;
     fn ws_url(&self) -> &Url;
@@ -36,7 +30,7 @@ impl DynChain for NamedChain {
             NamedChain::Arbitrum => &ENV.arbitrum_ws_url,
             NamedChain::Sepolia => &ENV.sepolia_ws_url,
             NamedChain::ArbitrumSepolia => &ENV.arbitrum_ws_url,
-            _ => panic!("can not resolve rpc_url, unsupported chain {}", self),
+            _ => panic!("can not resolve ws_url, unsupported chain {}", self),
         }
     }
 
@@ -122,7 +116,7 @@ impl DynChain for NamedChain {
             NamedChain::Sepolia => sepolia::STARGATE_BRIGDE,
             NamedChain::ArbitrumSepolia => arb_sepolia::STARGATE_BRIGDE,
             _ => panic!(
-                "can not resolve router_contract_address, unsupported chain {}",
+                "can not resolve stargate_bridge_address, unsupported chain {}",
                 self
             ),
         }
