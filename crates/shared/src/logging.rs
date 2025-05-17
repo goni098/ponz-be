@@ -9,7 +9,7 @@ struct InfoOnlyFilter;
 
 impl<S> Filter<S> for InfoOnlyFilter {
     fn enabled(&self, meta: &Metadata<'_>, _: &tracing_subscriber::layer::Context<'_, S>) -> bool {
-        meta.level() == &tracing::Level::INFO || meta.level() == &tracing::Level::DEBUG
+        meta.level() == &tracing::Level::INFO
     }
 }
 

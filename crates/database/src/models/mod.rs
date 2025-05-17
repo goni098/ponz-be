@@ -14,7 +14,7 @@ use crate::{
         execute_receive_fund_cross_chain_failed_event, pool, rebalance_fund_same_chain_event, user,
         withdraw_fund_cross_chain_from_operator_event, withdraw_request_event,
     },
-    utils::{to_signed_unit, to_unit},
+    utils::to_unit,
 };
 
 pub type User = user::Model;
@@ -52,7 +52,7 @@ impl TryFrom<rebalance_fund_same_chain_event::Model> for RebalanceFundSameChain 
             rebalanceFee: to_unit(model.rebalance_fee)?,
             rebalancedAt: U256::from(model.emit_at.timestamp()),
             receivedAmount: to_unit(model.received_amount)?,
-            receivedReward: to_signed_unit(model.received_reward)?,
+            receivedReward: to_unit(model.received_reward)?,
             referralFee: to_unit(model.rebalance_fee)?,
             strategyAddress: Address::from_str(&model.strategy_address)?,
             underlyingAsset: Address::from_str(&model.underlying_asset)?,
