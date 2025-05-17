@@ -1,6 +1,5 @@
 use alloy::{
     primitives::TxHash,
-    providers::Provider,
     rpc::types::{Filter, Log},
 };
 use alloy_chains::NamedChain;
@@ -8,17 +7,22 @@ use database::{
     repositories,
     sea_orm::{ConnectOptions, Database, DatabaseConnection},
 };
-use futures_util::StreamExt;
+use error::SocketError;
+use futures_util::{SinkExt, StreamExt};
 use operator::withdraw::withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed;
 use pools::ExternalPoolsService;
 use scanner::handlers::{Context, save_log};
+use serde_json::json;
 use shared::{AppResult, env::ENV};
+use tokio_tungstenite::{connect_async, tungstenite::Message};
 use web3::{
     DynChain,
-    clients::create_ws_client,
     events::EXPECTED_EVENTS,
     logs::{ExpectedLog, decoder::decode_log},
 };
+
+mod error;
+mod extract_msg;
 
 #[tokio::main]
 async fn main() {
@@ -43,8 +47,9 @@ async fn bootstrap(chain: NamedChain) -> AppResult<()> {
     }
 }
 
-async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
-    let ws_client = create_ws_client(chain).await?;
+async fn stream(chain: NamedChain, db: &DatabaseConnection) -> Result<(), SocketError> {
+    let ws_url = chain.ws_url();
+    let pools_service = ExternalPoolsService::new(db.clone());
 
     let router_address = chain.router_contract_address();
     let cross_chain_router_address = chain.cross_chain_router_contract_address();
@@ -68,20 +73,34 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> AppResult<()> {
         ])
         .events(EXPECTED_EVENTS);
 
-    let mut stream = ws_client.subscribe_logs(&filter).await?.into_stream();
-    let pools_service = ExternalPoolsService::new(db.clone());
+    let (stream, _) = connect_async(ws_url.as_str()).await?;
+
+    let (mut write, mut read) = stream.split();
+
+    let msg_subcribe = json!({
+          "id": 0,
+          "jsonrpc": "2.0",
+          "method": "eth_subscribe",
+          "params": ["logs", filter]
+    });
+
+    write
+        .send(Message::Text(msg_subcribe.to_string().into()))
+        .await?;
 
     tracing::info!("🦀 stream is running on {}", chain);
 
-    while let Some(log) = stream.next().await {
-        match process_log(chain, db, &pools_service, log).await {
-            Ok(tx_hash) => {
-                tracing::info!("solved log {}", tx_hash);
-            }
-            Err(error) => {
-                tracing::error!("process log error: {:#?}", error);
-            }
-        };
+    while let Some(message) = read.next().await {
+        if let Some(log) = extract_msg::extract(message?)? {
+            match process_log(chain, db, &pools_service, log).await {
+                Ok(tx_hash) => {
+                    tracing::info!("solved log {}", tx_hash);
+                }
+                Err(error) => {
+                    tracing::error!("process log error: {:#?}", error);
+                }
+            };
+        }
     }
 
     Ok(())
