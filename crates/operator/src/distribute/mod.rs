@@ -39,13 +39,10 @@ pub async fn process_from_db(
                 repositories::deposit_fund_event::pin_as_resolved(db, tx_hash, log_index).await?;
             }
             Err(error) => {
-                repositories::deposit_fund_event::pin_as_failed(
-                    db,
-                    tx_hash,
-                    log_index,
-                    format!("{:#?}", error),
-                )
-                .await?;
+                tracing::error!("distribute_when_deposit error {:#?}", error);
+                let msg = format!("{:#?}", error);
+                repositories::deposit_fund_event::pin_as_failed(db, tx_hash, log_index, msg)
+                    .await?;
             }
         }
     }
@@ -63,11 +60,10 @@ pub async fn process_from_db(
                 .await?;
             }
             Err(error) => {
+                tracing::error!("distribute_when_rebalance error {:#?}", error);
+                let msg = format!("{:#?}", error);
                 repositories::rebalance_fund_same_chain_event::pin_as_failed(
-                    db,
-                    tx_hash,
-                    log_index,
-                    format!("{:#?}", error),
+                    db, tx_hash, log_index, msg,
                 )
                 .await?;
             }
@@ -87,11 +83,10 @@ pub async fn process_from_db(
                 .await?;
             }
             Err(error) => {
+                tracing::error!("distribute_when_withdraw_from_operator error {:#?}", error);
+                let msg = format!("{:#?}", error);
                 repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_failed(
-                    db,
-                    tx_hash,
-                    log_index,
-                    format!("{:#?}", error),
+                    db, tx_hash, log_index, msg,
                 )
                 .await?;
             }

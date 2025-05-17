@@ -52,6 +52,7 @@ pub async fn create(
         underlying_asset: Set(underlyingAsset.to_string()),
         smf_error_msg: Set(None),
         rebalance_status: Set(TxnStatus::Pending),
+        attempt_retry: Set(0),
     };
 
     distribute_user_fund_event::Entity::insert(model)
@@ -131,6 +132,10 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             distribute_user_fund_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            distribute_user_fund_event::Column::AttemptRetry,
+            Expr::column(distribute_user_fund_event::Column::AttemptRetry).add(1),
         )
         .exec(db)
         .await?;

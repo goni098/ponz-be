@@ -29,13 +29,10 @@ pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppR
                     .await?;
             }
             Err(error) => {
-                repositories::withdraw_request_event::pin_as_failed(
-                    db,
-                    tx_hash,
-                    log_index,
-                    format!("{:#?}", error),
-                )
-                .await?;
+                tracing::error!("withdraw_when_request error: {:#?}", error);
+                let msg = format!("{:#?}", error);
+                repositories::withdraw_request_event::pin_as_failed(db, tx_hash, log_index, msg)
+                    .await?;
             }
         }
     }
@@ -54,11 +51,13 @@ pub async fn process_from_db(chain: NamedChain, db: &DatabaseConnection) -> AppR
                 .await?;
             }
             Err(error) => {
+                tracing::error!(
+                    "withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed error: {:#?}",
+                    error
+                );
+                let msg = format!("{:#?}", error);
                 repositories::execute_receive_fund_cross_chain_failed_event::pin_as_failed(
-                    db,
-                    tx_hash,
-                    log_index,
-                    format!("{:#?}", error),
+                    db, tx_hash, log_index, msg,
                 )
                 .await?;
             }

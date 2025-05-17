@@ -8,7 +8,7 @@ use sea_orm::{
 use serde_json::json;
 use web3::contracts::router::Router::WithdrawRequest;
 
-use crate::{entities::withdraw_request_event, enums::TxnStatus};
+use crate::{MAX_RETRY_COUNT_FILTER, entities::withdraw_request_event, enums::TxnStatus};
 
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
@@ -33,6 +33,7 @@ pub async fn upsert(
         args: Set(json!(event)),
         status: Set(TxnStatus::Pending),
         smf_error_msg: Set(None),
+        attempt_retry: Set(0),
     };
 
     withdraw_request_event::Entity::insert(model)
@@ -61,6 +62,7 @@ pub async fn find_unresolved(
         .filter(
             withdraw_request_event::Column::Status.is_in([TxnStatus::Pending, TxnStatus::Failed]),
         )
+        .filter(withdraw_request_event::Column::AttemptRetry.lt(MAX_RETRY_COUNT_FILTER))
         .order_by_desc(withdraw_request_event::Column::EmitAt)
         .limit(limit)
         .all(db)
@@ -101,6 +103,10 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             withdraw_request_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            withdraw_request_event::Column::AttemptRetry,
+            Expr::column(withdraw_request_event::Column::AttemptRetry).add(1),
         )
         .exec(db)
         .await?;

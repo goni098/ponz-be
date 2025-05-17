@@ -1,28 +1,17 @@
-use alloy::{
-    primitives::TxHash,
-    rpc::types::{Filter, Log},
-};
+use alloy::rpc::types::Filter;
 use alloy_chains::NamedChain;
-use database::{
-    repositories,
-    sea_orm::{ConnectOptions, Database, DatabaseConnection},
-};
+use database::sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use error::SocketError;
 use futures_util::{SinkExt, StreamExt};
-use operator::withdraw::withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed;
 use pools::ExternalPoolsService;
-use scanner::handlers::{Context, save_log};
 use serde_json::json;
 use shared::{AppResult, env::ENV};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
-use web3::{
-    DynChain,
-    events::EXPECTED_EVENTS,
-    logs::{ExpectedLog, decoder::decode_log},
-};
+use web3::{DynChain, events::EXPECTED_EVENTS};
 
 mod error;
 mod extract_msg;
+mod process_log;
 
 #[tokio::main]
 async fn main() {
@@ -92,9 +81,9 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> Result<(), Socket
 
     while let Some(message) = read.next().await {
         if let Some(log) = extract_msg::extract(message?)? {
-            match process_log(chain, db, &pools_service, log).await {
+            match process_log::process(chain, db, &pools_service, log).await {
                 Ok(tx_hash) => {
-                    tracing::info!("solved log {}", tx_hash);
+                    tracing::info!("catched log {}", tx_hash);
                 }
                 Err(error) => {
                     tracing::error!("process log error: {:#?}", error);
@@ -104,142 +93,4 @@ async fn stream(chain: NamedChain, db: &DatabaseConnection) -> Result<(), Socket
     }
 
     Ok(())
-}
-
-async fn process_log(
-    chain: NamedChain,
-    db: &DatabaseConnection,
-    pools_service: &ExternalPoolsService,
-    log: Log,
-) -> AppResult<TxHash> {
-    let tx_hash = log.transaction_hash.unwrap_or_default();
-    let log_index = log.log_index.unwrap_or_default();
-
-    let Some(log) = decode_log(log)? else {
-        return Ok(tx_hash);
-    };
-
-    save_log(db, chain, log.clone(), Context::Stream).await?;
-
-    match log {
-        ExpectedLog::DepositFund(log) => {
-            match operator::distribute::distribute_when_deposit(
-                chain,
-                pools_service,
-                log.inner.data,
-            )
-            .await
-            {
-                Ok(_) => {
-                    repositories::deposit_fund_event::pin_as_resolved(db, tx_hash, log_index)
-                        .await?;
-                }
-                Err(error) => {
-                    tracing::error!("distribute_when_deposit error: {:#?}", error);
-
-                    repositories::deposit_fund_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            };
-        }
-        ExpectedLog::RebalanceFundSameChain(log) => {
-            match operator::distribute::distribute_when_rebalance(
-                chain,
-                pools_service,
-                log.inner.data,
-            )
-            .await
-            {
-                Ok(_) => {
-                    repositories::rebalance_fund_same_chain_event::pin_as_resolved(
-                        db, tx_hash, log_index,
-                    )
-                    .await?;
-                }
-                Err(error) => {
-                    repositories::rebalance_fund_same_chain_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            };
-        }
-        ExpectedLog::WithdrawFundCrossChainFromOperator(log) => {
-            match operator::distribute::distribute_when_withdraw_from_operator(
-                chain,
-                pools_service,
-                log.inner.data,
-            )
-            .await
-            {
-                Ok(_) => {
-                    repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_resolved(
-                        db, tx_hash, log_index,
-                    )
-                    .await?;
-                }
-                Err(error) => {
-                    repositories::withdraw_fund_cross_chain_from_operator_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            };
-        }
-        ExpectedLog::ExecuteReceiveFundCrossChainFailed(log) => {
-            match withdraw_from_bridge_when_execute_receive_fund_cross_chain_failed(
-                chain,
-                log.inner.data,
-            )
-            .await
-            {
-                Ok(_) => {
-                    repositories::execute_receive_fund_cross_chain_failed_event::pin_as_resolved(
-                        db, tx_hash, log_index,
-                    )
-                    .await?;
-                }
-                Err(error) => {
-                    repositories::execute_receive_fund_cross_chain_failed_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            }
-        }
-        ExpectedLog::WithdrawRequest(log) => {
-            match operator::withdraw::withdraw_when_request(chain, db, log.inner.data).await {
-                Ok(_) => {
-                    repositories::withdraw_request_event::pin_as_resolved(db, tx_hash, log_index)
-                        .await?;
-                }
-                Err(error) => {
-                    repositories::withdraw_request_event::pin_as_failed(
-                        db,
-                        tx_hash,
-                        log_index,
-                        format!("{:#?}", error),
-                    )
-                    .await?;
-                }
-            };
-        }
-        _ => {}
-    };
-
-    Ok(tx_hash)
 }

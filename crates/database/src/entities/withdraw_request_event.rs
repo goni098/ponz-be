@@ -18,6 +18,7 @@ pub struct Model {
     pub args: Json,
     pub token_out: String,
     pub status: TxnStatus,
+    pub attempt_retry: i32,
     pub smf_error_msg: Option<String>,
 }
 

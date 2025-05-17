@@ -141,6 +141,7 @@ mod test {
                 ],
                 "withdrawStrategySameChains": []
             }),
+            attempt_retry: 0,
         };
 
         let event = WithdrawRequest::try_from(model);
@@ -170,6 +171,7 @@ mod test {
             smf_error_msg: None,
             receiver: "0x0D3E7FaacF6E3EaD3121Afc8f9C6f8f4245C1627".to_string(),
             token_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string(),
+            attempt_retry: 0,
         };
 
         let event = DepositFund::try_from(model);

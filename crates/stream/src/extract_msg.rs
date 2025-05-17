@@ -21,7 +21,6 @@ pub fn extract(message: Message) -> Result<Option<Log>, serde_json::Error> {
         let log: Log = serde_json::from_value(incomming.params.result)?;
         Ok(Some(log))
     } else {
-        tracing::info!("ping pong!");
         Ok(None)
     }
 }

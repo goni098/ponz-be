@@ -28,6 +28,7 @@ pub struct Model {
     #[sea_orm(column_type = "Decimal(Some((90, 0)))")]
     pub rebalance_fee: Decimal,
     pub distribute_status: TxnStatus,
+    pub attempt_retry: i32,
     pub smf_error_msg: Option<String>,
 }
 

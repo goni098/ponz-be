@@ -7,7 +7,10 @@ use sea_orm::{
 };
 use web3::contracts::router::Router::RebalanceFundSameChain;
 
-use crate::{entities::rebalance_fund_same_chain_event, enums::TxnStatus, utils::to_decimal};
+use crate::{
+    MAX_RETRY_COUNT_FILTER, entities::rebalance_fund_same_chain_event, enums::TxnStatus,
+    utils::to_decimal,
+};
 
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
@@ -50,6 +53,7 @@ pub async fn upsert(
         tx_hash: Set(tx_hash.to_string()),
         distribute_status: Set(TxnStatus::Pending),
         smf_error_msg: Set(None),
+        attempt_retry: Set(0),
     };
 
     rebalance_fund_same_chain_event::Entity::insert(model)
@@ -86,6 +90,7 @@ pub async fn find_unresolved(
             rebalance_fund_same_chain_event::Column::DistributeStatus
                 .is_in([TxnStatus::Failed, TxnStatus::Pending]),
         )
+        .filter(rebalance_fund_same_chain_event::Column::AttemptRetry.lt(MAX_RETRY_COUNT_FILTER))
         .limit(limit)
         .order_by_desc(rebalance_fund_same_chain_event::Column::EmitAt)
         .all(db)
@@ -126,6 +131,10 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             rebalance_fund_same_chain_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            rebalance_fund_same_chain_event::Column::AttemptRetry,
+            Expr::column(rebalance_fund_same_chain_event::Column::AttemptRetry).add(1),
         )
         .exec(db)
         .await?;

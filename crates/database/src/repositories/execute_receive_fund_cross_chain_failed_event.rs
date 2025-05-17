@@ -8,7 +8,8 @@ use sea_orm::{
 use web3::contracts::stargate_bridge::StargateBridge::ExecuteReceiveFundCrossChainFailed;
 
 use crate::{
-    entities::execute_receive_fund_cross_chain_failed_event, enums::TxnStatus, utils::to_decimal,
+    MAX_RETRY_COUNT_FILTER, entities::execute_receive_fund_cross_chain_failed_event,
+    enums::TxnStatus, utils::to_decimal,
 };
 
 pub async fn upsert(
@@ -48,6 +49,7 @@ pub async fn upsert(
         smf_error_msg: Set(None),
         status: Set(TxnStatus::Pending),
         src_id: Set(srcId.to()),
+        attempt_retry: Set(0),
     };
 
     execute_receive_fund_cross_chain_failed_event::Entity::insert(model)
@@ -81,6 +83,10 @@ pub async fn find_unresolved(
         .filter(
             execute_receive_fund_cross_chain_failed_event::Column::Status
                 .is_in([TxnStatus::Failed, TxnStatus::Pending]),
+        )
+        .filter(
+            execute_receive_fund_cross_chain_failed_event::Column::AttemptRetry
+                .lt(MAX_RETRY_COUNT_FILTER),
         )
         .limit(limit)
         .order_by_desc(execute_receive_fund_cross_chain_failed_event::Column::EmitAt)
@@ -126,6 +132,11 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             execute_receive_fund_cross_chain_failed_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            execute_receive_fund_cross_chain_failed_event::Column::AttemptRetry,
+            Expr::column(execute_receive_fund_cross_chain_failed_event::Column::AttemptRetry)
+                .add(1),
         )
         .exec(db)
         .await?;

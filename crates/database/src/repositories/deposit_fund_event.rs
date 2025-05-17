@@ -7,7 +7,9 @@ use sea_orm::{
 };
 use web3::contracts::router::Router::DepositFund;
 
-use crate::{entities::deposit_fund_event, enums::TxnStatus, utils::to_decimal};
+use crate::{
+    MAX_RETRY_COUNT_FILTER, entities::deposit_fund_event, enums::TxnStatus, utils::to_decimal,
+};
 
 pub async fn upsert(
     db_tx: &DatabaseTransaction,
@@ -42,6 +44,7 @@ pub async fn upsert(
         tx_hash: Set(tx_hash.to_string()),
         smf_error_msg: Set(None),
         distribute_status: Set(TxnStatus::Pending),
+        attempt_retry: Set(0),
     };
 
     deposit_fund_event::Entity::insert(model)
@@ -74,6 +77,7 @@ pub async fn find_unresolved(
             deposit_fund_event::Column::DistributeStatus
                 .is_in([TxnStatus::Failed, TxnStatus::Pending]),
         )
+        .filter(deposit_fund_event::Column::AttemptRetry.lt(MAX_RETRY_COUNT_FILTER))
         .limit(limit)
         .order_by_desc(deposit_fund_event::Column::EmitAt)
         .all(db)
@@ -114,6 +118,10 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             deposit_fund_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            deposit_fund_event::Column::AttemptRetry,
+            Expr::column(deposit_fund_event::Column::AttemptRetry).add(1),
         )
         .exec(db)
         .await?;

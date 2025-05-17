@@ -8,7 +8,8 @@ use sea_orm::{
 use web3::contracts::cross_chain_router::CrossChainRouter::WithdrawFundCrossChainFromOperator;
 
 use crate::{
-    entities::withdraw_fund_cross_chain_from_operator_event, enums::TxnStatus, utils::to_decimal,
+    MAX_RETRY_COUNT_FILTER, entities::withdraw_fund_cross_chain_from_operator_event,
+    enums::TxnStatus, utils::to_decimal,
 };
 
 pub async fn upsert(
@@ -46,6 +47,7 @@ pub async fn upsert(
         withdraw_fee: Set(to_decimal(withdrawFee)?),
         smf_error_msg: Set(None),
         distribute_status: Set(TxnStatus::Pending),
+        attempt_retry: Set(0),
     };
 
     withdraw_fund_cross_chain_from_operator_event::Entity::insert(model)
@@ -78,6 +80,10 @@ pub async fn find_unresolved(
         .filter(
             withdraw_fund_cross_chain_from_operator_event::Column::DistributeStatus
                 .is_in([TxnStatus::Failed, TxnStatus::Pending]),
+        )
+        .filter(
+            withdraw_fund_cross_chain_from_operator_event::Column::AttemptRetry
+                .lt(MAX_RETRY_COUNT_FILTER),
         )
         .limit(limit)
         .order_by_desc(withdraw_fund_cross_chain_from_operator_event::Column::EmitAt)
@@ -123,6 +129,11 @@ pub async fn pin_as_failed<T: ToString>(
         .col_expr(
             withdraw_fund_cross_chain_from_operator_event::Column::SmfErrorMsg,
             Expr::value(error_msg),
+        )
+        .col_expr(
+            withdraw_fund_cross_chain_from_operator_event::Column::AttemptRetry,
+            Expr::column(withdraw_fund_cross_chain_from_operator_event::Column::AttemptRetry)
+                .add(1),
         )
         .exec(db)
         .await?;

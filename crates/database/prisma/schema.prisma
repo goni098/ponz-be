@@ -49,6 +49,7 @@ model withdraw_fund_cross_chain_from_operator_event {
   total_amount_out  Decimal    @db.Decimal(90, 0)
   withdraw_fee      Decimal    @db.Decimal(90, 0)
   distribute_status txn_status
+  attempt_retry     Int
   smf_error_msg     String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
@@ -86,6 +87,7 @@ model execute_receive_fund_cross_chain_failed_event {
   deposited_token_address String     @db.VarChar(42)
   amount                  Decimal    @db.Decimal(90, 0)
   status                  txn_status
+  attempt_retry           Int
   smf_error_msg           String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
@@ -115,6 +117,7 @@ model deposit_fund_event {
   deposit_amount        Decimal    @db.Decimal(90, 0)
   actual_deposit_amount Decimal    @db.Decimal(90, 0)
   distribute_status     txn_status
+  attempt_retry         Int
   smf_error_msg         String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
@@ -136,6 +139,7 @@ model distribute_user_fund_event {
   strategy_share          Decimal    @db.Decimal(90, 0)
   distributed_fee         Decimal    @db.Decimal(90, 0)
   rebalance_status        txn_status
+  attempt_retry           Int
   smf_error_msg           String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
@@ -172,6 +176,7 @@ model rebalance_fund_same_chain_event {
   referral_fee      Decimal    @db.Decimal(90, 0)
   rebalance_fee     Decimal    @db.Decimal(90, 0)
   distribute_status txn_status
+  attempt_retry     Int
   smf_error_msg     String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
@@ -186,6 +191,7 @@ model withdraw_request_event {
   args          Json
   token_out     String     @db.VarChar(42)
   status        txn_status
+  attempt_retry Int
   smf_error_msg String?    @db.VarChar
 
   @@unique([tx_hash, log_index])
